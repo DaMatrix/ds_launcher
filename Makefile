@@ -21,6 +21,11 @@ SOURCES		:=	source
 DATA		:=	data  
 INCLUDES	:=	include
 
+GAME_ICON       := $(CURDIR)/../icon.bmp
+GAME_TITLE      := DSLauncher v0.1b
+GAME_SUBTITLE1  := Made by DaPorkchop_
+GAME_SUBTITLE2  := https://daporkchop.net
+
 #---------------------------------------------------------------------------------
 # options for code generation
 #---------------------------------------------------------------------------------
@@ -98,6 +103,7 @@ export LIBPATHS	:=	$(foreach dir,$(LIBDIRS),-L$(dir)/lib)
 $(BUILD):
 	@[ -d $@ ] || mkdir -p $@
 	@$(MAKE) --no-print-directory -C $(BUILD) -f $(CURDIR)/Makefile
+	@cp $(CURDIR)/ds_launcher.nds /media/daporkchop/3466-6433/ds_launcher.nds
  
 #---------------------------------------------------------------------------------
 clean:

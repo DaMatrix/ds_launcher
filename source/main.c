@@ -1,23 +1,6 @@
-/*---------------------------------------------------------------------------------
-
----------------------------------------------------------------------------------*/
-#include <nds.h>
-#include <dswifi9.h>
-#include <sys/socket.h>
-#include <netinet/in.h>
-#include <netdb.h>
-
-#include <fat.h>
-#include <sys/dir.h>
-
-#include <stdio.h>
-#include <string.h>
-
-#define PORT 8236
+#include "../include/main.h"
 
 char* hex = "0123456789abcdef";
-
-char* getHttp(char* addr, char* url);
 
 unsigned int decodeHex(char* in) {
     unsigned int val = 0;
@@ -40,20 +23,14 @@ int main(void) {
     iprintf("Initializing filesystem...\n");
     //fatInitDefault();
 
-    iprintf("Initializing Internet connection...\n");
-
-    if (!Wifi_InitDefault(WFC_CONNECT)) {
-        iprintf("Failed to connect!");
-    } else {
-        iprintf("Ready!\n\n");
-
-        getHttp("192.168.1.102", "/index.txt");
-    }
+    initNetworking();
+    
+    iprintf("%s", requestData("/index.txt"));
 
     while (1) {
         swiWaitForVBlank();
         int keys = keysDown();
-        if (keys) break;
+        //if (keys) break;
     }
 
     return 0;

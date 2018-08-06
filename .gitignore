@@ -6,5 +6,9 @@
 /nbproject/
 *.iml
 *.ipr
-/.idea/
+.idea/
 /examples/
+*.jar
+*.class
+/server/build
+/server/.gradle
