@@ -43,8 +43,8 @@ int main(void) {
     iprintf("\n\n\tStarting the PorkStore...\n\n");
     initNetworking();
     
-    iprintf("%s\n", requestData("/a"));
-    iprintf("%s\n", requestData("/b"));
+    //iprintf("%s\n", requestData("/a"));
+    //iprintf("%s\n", requestData("/b"));
 
     Registry registry = parseRegistry(requestData("/index.txt"), true);
     //Registry registry = parseRegistry("30000000b0000000httpget.nds1000000001000000LEGO Battles.nds10000000e0000000WfcPatcher.exe10000000", false);
@@ -94,12 +94,14 @@ int main(void) {
             }
         } else if (mode == 1) {
             if ((keys & KEY_X)) {
-                //TODO: download
                 Entry entry = getCurrentEntry(&registry);
-                downloadFile(entry);
-                addEntry(&local, entry);
+                downloadFile(&entry);
+                iprintf("Adding entry to registry\n");
+                addEntry(&local, &entry);
                 
+                iprintf("Encoding registry to text\n");
                 char* encoded = encodeRegistry(&local);
+                iprintf("Writing registry to disk\n");
                 replaceFile("/porkstore_index.txt", encoded);
                 free(encoded);
             }

@@ -26,7 +26,7 @@ char* encodeRegistry(Registry* registry);
 Entry getEntryAtIndex(Registry* registry, int i);
 Entry getCurrentEntry(Registry* registry);
 
-void addEntry(Registry* registry, Entry e);
+void addEntry(Registry* registry, Entry* e);
 void removeEntry(Registry* registry, Entry* e);
 
 #endif /* REGISTRY_H */

@@ -12,6 +12,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
 import java.util.Scanner;
+import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -39,37 +40,10 @@ public class Main {
             final String path = exchange.getRequestURI().getPath();
             System.out.println(path);
             if (path.startsWith("/download")) {
-                int hash = decodeHex(path.replaceFirst("/download/", "").toCharArray(), 0);
-                for (File file : ROOT_FOLDER.listFiles()) {
-                    if ((file.getName().hashCode() & 0xFFFFFF) == hash) {
-                        exchange.sendResponseHeaders(200, 1);
-                        OutputStream os = exchange.getResponseBody();
-                        os.write(127);
-                        {
-                            byte[] name = ('/' + file.getName()).getBytes();
-                            os.write(encodeHex(name.length));
-                            os.write(name);
-                        }
-                        os.write(encodeHex((int) file.length()));
-                        FileInputStream fis = new FileInputStream(file);
-                        byte[] buf = new byte[256];
-                        while (true) {
-                            int read = fis.read(buf);
-                            if (read == -1) {
-                                break;
-                            }
-                            os.write(buf, 0, read);
-                        }
-                        fis.close();
-                        os.flush();
-                        os.close();
-                        exchange.close();
-                        return;
-                    }
-                }
-                exchange.sendResponseHeaders(404, 0);
-                exchange.close();
-                return;
+                File file = new File(ROOT_FOLDER, path.replaceFirst("/download/", ""));
+                System.out.println(file.getAbsolutePath() + ' ' + file.exists());
+                len = (int) file.length();
+                data = new FileInputStream(file);
             }
             /*if (path.startsWith("/updates")) {
                 String[] names = path.replaceFirst("/updates=", "").split("&");
@@ -116,11 +90,11 @@ public class Main {
                     ByteArrayOutputStream baos = new ByteArrayOutputStream();
                     baos.write(encodeHex(ROOT_FOLDER.listFiles().length));
                     for (File file : ROOT_FOLDER.listFiles()) {
-                        byte[] name = file.getName().replaceAll(".nds", "").getBytes();
+                        byte[] name = file.getName()/*.replaceAll(".nds", "")*/.getBytes();
                         baos.write(encodeHex(name.length));
                         baos.write(name);
                         baos.write(encodeHex(1)); //version
-                        baos.write(encodeHex(file.getName().hashCode() & 0xFFFFFF)); //id
+                        //baos.write(encodeHex(file.getName().hashCode() & 0xFFFFFF)); //id
                     }
                     bytes = baos.toByteArray();
                     break;
