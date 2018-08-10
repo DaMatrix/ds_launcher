@@ -103,7 +103,7 @@ export LIBPATHS	:=	$(foreach dir,$(LIBDIRS),-L$(dir)/lib)
 $(BUILD):
 	@[ -d $@ ] || mkdir -p $@
 	@$(MAKE) --no-print-directory -C $(BUILD) -f $(CURDIR)/Makefile
-	@cp $(CURDIR)/ds_launcher.nds /media/daporkchop/3466-6433/ds_launcher.nds
+	@bash -c "if [ -d /media/daporkchop/3466-6433/ ]; then cp $(CURDIR)/ds_launcher.nds /media/daporkchop/3466-6433/ds_launcher.nds; else echo Not copying ROM to SD card; fi"
  
 #---------------------------------------------------------------------------------
 clean:

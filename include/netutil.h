@@ -1,7 +1,8 @@
 #ifndef NETUTIL_H
 #define NETUTIL_H
 
-#include "misc.h"
+#include <misc.h>
+#include <util/buffer.h>
 
 void initNetworking();
 

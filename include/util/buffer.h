@@ -1,7 +1,7 @@
 #ifndef BUFFER_H
 #define BUFFER_H
 
-#include "misc.h"
+#include <misc.h>
 
 typedef struct {
   char* array;

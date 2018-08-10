@@ -1,6 +1,100 @@
-#include "../include/main.h"
+#include <main.h>
 
 char* hex = "0123456789abcdef";
+
+void insert(Buffer* b, char* c) {
+    int len = sizeof (c) / sizeof (c[0]);
+    for (int i = 0; i < len; i++) {
+        insertArray(&b, c[i]);
+    }
+}
+
+int main(void) {
+    consoleDemoInit(); //setup the sub screen for printing
+    /*
+        iprintf("\n\n\tStarting the PorkStore...\n\n");
+        initNetworking();
+
+        iprintf("Initializing filesystem...\n");
+        fatInitDefault();
+
+        Namelist list = parse(requestData("/index.txt"));*/
+    Namelist list = parse("70000000b0000000httpget.nds01000000LEGO Battles.nds91000000Mario Kart DS (NoSSL).nds81000000New Super Mario Bros.nds81000000New Super Mario Bros.savc2000000Pokemon - Black Version (daporkchop.net).ndse0000000WfcPatcher.exe");
+
+    int mode = -1;
+
+    while (1) {
+        swiWaitForVBlank();
+        scanKeys();
+        u16 keys = keysDown();
+        if (mode == -1)  {
+            mode = 0;
+            goto DRAW_MENU;
+        } else if (mode == 0) {
+            if ((keys & KEY_UP)) {
+                list.current_scroll--;
+                goto DRAW_MENU;
+            }
+            if ((keys & KEY_DOWN)) {
+                list.current_scroll++;
+                goto DRAW_MENU;
+            }
+            if ((keys & KEY_A)) {
+                mode = 1;
+                goto DRAW_ITEM;
+            }
+        } else if (mode == 1) {
+            if ((keys & KEY_X)) {
+                //TODO: download
+            }
+            if ((keys & KEY_B)) {
+                mode = 0;
+                goto DRAW_MENU;
+            }
+        }
+
+        if (false) {
+DRAW_MENU:
+            while (0) {
+            }
+            //excuse this mess please, but it goes faster than a loop
+            iprintf("Press X to check for updates\n\n  %s\n  %s\n  %s\n  %s\n  %s\n  %s\n  %s\n  %s\n  %s\n> %s\n  %s\n  %s\n  %s\n  %s\n  %s\n  %s\n  %s\n  %s\n  %s\n\n\n",
+                    getNameAtIndex(&list, -9),
+                    getNameAtIndex(&list, -8),
+                    getNameAtIndex(&list, -7),
+                    getNameAtIndex(&list, -6),
+                    getNameAtIndex(&list, -5),
+                    getNameAtIndex(&list, -4),
+                    getNameAtIndex(&list, -3),
+                    getNameAtIndex(&list, -2),
+                    getNameAtIndex(&list, -1),
+                    getNameAtIndex(&list, 0),
+                    getNameAtIndex(&list, 1),
+                    getNameAtIndex(&list, 2),
+                    getNameAtIndex(&list, 3),
+                    getNameAtIndex(&list, 4),
+                    getNameAtIndex(&list, 5),
+                    getNameAtIndex(&list, 6),
+                    getNameAtIndex(&list, 7),
+                    getNameAtIndex(&list, 8),
+                    getNameAtIndex(&list, 9));
+            /*iprintf("Press X to check for updates\n\n");
+            for (int i = -10; i < 8; i++) {
+                iprintf(i == 0 ? "> %s\n" : "  %s\n", list.names[(scroll + i) % list.count]);
+            }*/
+        }
+        if (false) {
+DRAW_ITEM:
+            while (0) {
+            }
+            char* name = getCurrentName(&list);
+            int ver = decodeHex("0000000f");
+            iprintf("\n%s\n\nLatest version:    %u\nInstalled version: %u\n\nPress X to download\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n", name, ver, 0);
+        }
+    }
+
+    return 0;
+}
 
 unsigned int decodeHex(char* in) {
     unsigned int val = 0;
@@ -16,98 +110,69 @@ unsigned int decodeHex(char* in) {
     return val;
 }
 
-int main(void) {
-    consoleDemoInit(); //setup the sub screen for printing
-
-    iprintf("\n\n\tStarting the PorkStore...\n\n");
-    iprintf("Initializing filesystem...\n");
-    //fatInitDefault();
-
-    initNetworking();
-    
-    iprintf("%s", requestData("/index.txt"));
-
-    while (1) {
-        swiWaitForVBlank();
-        int keys = keysDown();
-        //if (keys) break;
-    }
-
-    return 0;
-}
-
-char* getHttp(char* addr, char* url) {
-    // Let's send a simple HTTP request to a server and print the results!
-
-    // store the HTTP request for later
-    char *request_text[50 + strlen(addr) + strlen(url)];
-    sprintf(request_text, "GET %s HTTP/1.1\r\nHost: %s\r\nUser-Agent: Nintendo DS\r\n\r\n", url, addr);
-
-    iprintf(request_text);
-
-    /*const char * request_text =
-            "GET  HTTP/1.1\r\n"
-            "Host: \r\n"
-            "User-Agent: Nintendo DS\r\n\r\n";
-    iprintf("%u (hex: %x)", strlen(request_text), strlen(request_text));*/
-
-    // Find the IP address of the server, with gethostbyname
-    //struct hostent * myhost = gethostbyname(url);
-    struct hostent * myhost = gethostbyname("ds-store.daporkchop.net");
-    iprintf("Found IP Address!\n");
-
-    // Create a TCP socket
-    int my_socket;
-    my_socket = socket(AF_INET, SOCK_STREAM, 0);
-    iprintf("Created Socket!\n");
-
-    // Tell the socket to connect to the IP address we found, on port 80 (HTTP)
-    struct sockaddr_in sain;
-    sain.sin_family = AF_INET;
-    sain.sin_port = htons(80);
-    sain.sin_addr.s_addr = *((unsigned long *) (myhost->h_addr_list[0]));
-    connect(my_socket, (struct sockaddr *) &sain, sizeof (sain));
-    iprintf("Connected to server!\n");
-
-    // send our request
-    send(my_socket, request_text, strlen(request_text), 0);
-    iprintf("Sent our request!\n");
-
-    // Print incoming data
-    iprintf("Printing incoming data:\n");
-
-    /*int recvd_len;
-    char *sizeBuf = malloc(sizeof (*sizeBuf) * 8);
-    unsigned int total_len = -1;
-    unsigned int read_len = 0;
-
-    while ((recvd_len = recv(my_socket, sizeBuf, 8, 0)) != 0) { // if recv returns 0, the socket has been closed.
-        if (recvd_len > 0) { // data was received!
-            read_len += recvd_len;
-            if (read_len == 8) {
-                unsigned int fullLength = decodeHex(sizeBuf);
-                iprintf("%u (hex: %x)", fullLength, fullLength);
-                free(sizeBuf);
+unsigned int decodeHexOffset(char* in, int offset) {
+    unsigned int val = 0;
+    for (int i = 0; i < 8; i++) {
+        char c = in[i + offset];
+        for (int j = 0; j < 16; j++) {
+            if (hex[j] == c) {
+                val |= j << (i << 2);
                 break;
             }
         }
-    }*/
-
-    int recvd_len;
-    char incoming_buffer[256];
-
-    while ((recvd_len = recv(my_socket, incoming_buffer, 255, 0)) != 0) { // if recv returns 0, the socket has been closed.
-        if (recvd_len > 0) { // data was received!
-            incoming_buffer[recvd_len] = 0; // null-terminate
-            iprintf(incoming_buffer);
-        }
     }
+    return val;
+}
 
-    iprintf("Other side closed connection!");
+char* encodeHex(int val) {
+    char* letters[8];
+    for (int i = 0; i < 8; i++) {
+        letters[i] = hex[(val >> (i << 2)) & 0xF];
+    }
+    return letters;
+}
 
-    shutdown(my_socket, 0); // good practice to shutdown the socket.
+Namelist parse(char* text) {
+    iprintf("Parsing...\n");
+    int index = 8;
+    Namelist list;
+    list.count = decodeHex(text);
+    list.names = (char**) malloc(list.count * sizeof (char*));
+    iprintf("Reading %u names...\n", list.count);
+    for (int i = 0; i < list.count; i++) {
+        int len = decodeHexOffset(text, index);
+        index += 8;
+        list.names[i] = (char*) malloc((len + 1) * sizeof (char));
+        char* letters = list.names[i];
+        for (int j = 0; j < len; j++) {
+            letters[j] = text[index++];
+        }
+        letters[len] = 0; //NULL-terminate
+        iprintf("%u (%u bytes) - %s", i, len, letters);
+        iprintf("\n");
+    }
+    iprintf("Freeing chars...\n");
+    free(text);
+    iprintf("Done!\n");
+    list.current_scroll = roundUp(1 << 30, list.count);
+    return list;
+}
 
-    closesocket(my_socket); // remove the socket.
-    char lol[3];
-    return lol;
+int roundUp(int numToRound, int multiple) {
+    if (multiple == 0) {
+        return numToRound;
+    }
+    int remainder = numToRound % multiple;
+    if (remainder == 0) {
+        return numToRound;
+    }
+    return numToRound + multiple - remainder;
+}
+
+char* getNameAtIndex(Namelist* list, int i) {
+    return list->names[(list->current_scroll + i) % list->count];
+}
+
+char* getCurrentName(Namelist* list)    {
+    return list->names[list->current_scroll % list->count];
 }
