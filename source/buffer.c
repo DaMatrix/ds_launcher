@@ -1,4 +1,4 @@
-#include <util/buffer.h>
+#include <buffer.h>
 
 void initArray(Buffer* b, size_t initialSize) {
   b->array = (char*) malloc(initialSize * sizeof(char));

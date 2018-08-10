@@ -91,6 +91,7 @@ public class Main {
                         byte[] name = file.getName().getBytes();
                         baos.write(encodeHex(name.length));
                         baos.write(name);
+                        baos.write(encodeHex(1));
                     }
                     bytes = baos.toByteArray();
                     break;
