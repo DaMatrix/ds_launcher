@@ -7,6 +7,7 @@
 void initNetworking();
 
 char* requestData(char* url);
+void downloadFile(Entry entry);
 
 #endif /* NETUTIL_H */
 

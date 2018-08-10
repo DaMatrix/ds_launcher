@@ -31,7 +31,7 @@ int decodeHexOffset(char* in, int offset) {
 }
 
 char* encodeHex(int val) {
-    char* letters[8];
+    char* letters = (char*) malloc(8 * sizeof(char));
     for (int i = 0; i < 8; i++) {
         letters[i] = hex[(val >> (i << 2)) & 0xF];
     }

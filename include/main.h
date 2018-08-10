@@ -2,6 +2,7 @@
 #define MAIN_H
 
 #include <buffer.h>
+#include <fileutil.h>
 #include <math.h>
 #include <misc.h>
 #include <netutil.h>

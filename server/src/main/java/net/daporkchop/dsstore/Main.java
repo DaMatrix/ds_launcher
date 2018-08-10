@@ -2,7 +2,6 @@ package net.daporkchop.dsstore;
 
 import com.sun.net.httpserver.HttpServer;
 import sun.misc.IOUtils;
-import sun.nio.ch.IOUtil;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -12,10 +11,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
 import java.util.Scanner;
 import java.util.concurrent.atomic.AtomicBoolean;
 
@@ -43,7 +38,40 @@ public class Main {
             int len = -1;
             final String path = exchange.getRequestURI().getPath();
             System.out.println(path);
-            if (path.startsWith("/updates")) {
+            if (path.startsWith("/download")) {
+                int hash = decodeHex(path.replaceFirst("/download/", "").toCharArray(), 0);
+                for (File file : ROOT_FOLDER.listFiles()) {
+                    if ((file.getName().hashCode() & 0xFFFFFF) == hash) {
+                        exchange.sendResponseHeaders(200, 1);
+                        OutputStream os = exchange.getResponseBody();
+                        os.write(127);
+                        {
+                            byte[] name = ('/' + file.getName()).getBytes();
+                            os.write(encodeHex(name.length));
+                            os.write(name);
+                        }
+                        os.write(encodeHex((int) file.length()));
+                        FileInputStream fis = new FileInputStream(file);
+                        byte[] buf = new byte[256];
+                        while (true) {
+                            int read = fis.read(buf);
+                            if (read == -1) {
+                                break;
+                            }
+                            os.write(buf, 0, read);
+                        }
+                        fis.close();
+                        os.flush();
+                        os.close();
+                        exchange.close();
+                        return;
+                    }
+                }
+                exchange.sendResponseHeaders(404, 0);
+                exchange.close();
+                return;
+            }
+            /*if (path.startsWith("/updates")) {
                 String[] names = path.replaceFirst("/updates=", "").split("&");
                 List<String> toUpdate = new ArrayList<>();
                 for (String s : names)   {
@@ -82,18 +110,25 @@ public class Main {
                 os.close();
                 exchange.close();
                 return;
-            }
+            }*/
             switch (path) {
                 case "/index.txt":
                     ByteArrayOutputStream baos = new ByteArrayOutputStream();
                     baos.write(encodeHex(ROOT_FOLDER.listFiles().length));
                     for (File file : ROOT_FOLDER.listFiles()) {
-                        byte[] name = file.getName().getBytes();
+                        byte[] name = file.getName().replaceAll(".nds", "").getBytes();
                         baos.write(encodeHex(name.length));
                         baos.write(name);
-                        baos.write(encodeHex(1));
+                        baos.write(encodeHex(1)); //version
+                        baos.write(encodeHex(file.getName().hashCode() & 0xFFFFFF)); //id
                     }
                     bytes = baos.toByteArray();
+                    break;
+                case "/a":
+                    bytes = "hello AAA".getBytes();
+                    break;
+                case "/b":
+                    bytes = "hello BBB".getBytes();
                     break;
             }
             if (len == -1L && bytes != null) {
@@ -162,7 +197,7 @@ public class Main {
         return val;
     }
 
-    public static int getVersion(String name) throws IOException   {
+    public static int getVersion(String name) throws IOException {
         FileInputStream fis = new FileInputStream(new File(ROOT_FOLDER, name + ".version"));
         int localVersion = Integer.parseInt(new String(IOUtils.readFully(fis, -1, false)));
         fis.close();

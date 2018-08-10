@@ -3,7 +3,7 @@
 
 static const int PORT_NUMBER = 8236;
 
-#include <nds.h>
+#include <nds9.h>
 #include <dswifi9.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
