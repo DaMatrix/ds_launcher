@@ -4,6 +4,8 @@
 int decodeHex(char* in);
 int decodeHexOffset(char* in, int offset);
 char* encodeHex(int val);
+void encodeHexTo(int val, char* to, int at);
+char* encodeHexTerm(int val);
 
 int roundUp(int numToRound, int multiple);
 

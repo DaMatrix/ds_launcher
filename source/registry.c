@@ -28,7 +28,8 @@ Registry parseRegistry(char* text, bool shouldFree) {
             iprintf("\n");
             entry.version = decodeHexOffset(text, index);
             index += 8;
-            entry.id = i;
+            entry.id = decodeHexOffset(text, index);
+            index += 8;
             registry.entries[i] = entry;
         }
     }
@@ -55,40 +56,44 @@ void writeCharsToBuf(Buffer* buf, char* c, int len) {
 }
 
 char* encodeRegistry(Registry* registry) {
-    Buffer buf;
-    initArray(&buf, 8);
-    writeCharsToBufAndFree(&buf, encodeHex(registry->count), 8);
+    int len = 8 + registry->count * (8 + 8 + 8);
+    char* text = (char*) malloc((len + 1) * sizeof(char));
+    encodeHexTo(registry->count, text, 0);
     for (int i = 0; i < registry->count; i++) {
-        writeCharsToBuf(&buf, "00000000", 8); //don't bother encoding the name, as this function is only used for writing to disk
+        encodeHexTo(0, text, 8 + (24 * i)); //don't bother encoding the name, as this function is only used for writing to disk
         Entry e = registry->entries[i];
-        writeCharsToBufAndFree(&buf, encodeHex(e.version), 8);
+        encodeHexTo(e.version, text, 8 + (24 * i) + 8);
+        encodeHexTo(e.id, text, 8 + (24 * i) + 16);
     }
-    char* temp = (char*) malloc(buf.used * sizeof (char));
-    for (int i = 0; i < buf.used; i++) {
-        temp[i] = buf.array[i];
-    }
-    freeArray(&buf);
-    return temp;
+    text[len] = 0;
+    return text;
 }
 
-Entry getEntryAtIndex(Registry* registry, int i) {
-    return registry->entries[(registry->current_scroll + i) % registry->count];
+void saveRegistry(Registry* registry, char* name)   {
+    FILE* fp = fopen(name, "w");
+    
+}
+
+Entry* getEntryAtIndex(Registry* registry, int i) {
+    return &registry->entries[(registry->current_scroll + i) % registry->count];
     //return registry->entries + ((registry->current_scroll + i) % registry->count);
 }
 
-Entry getCurrentEntry(Registry* registry) {
-    return registry->entries[registry->current_scroll % registry->count];
+Entry* getCurrentEntry(Registry* registry) {
+    return &registry->entries[registry->current_scroll % registry->count];
     //return registry->entries + (registry->current_scroll % registry->count);
 }
 
 void addEntry(Registry* registry, Entry* e) {
     registry->count++;
-    registry->entries = (Entry*) realloc(registry->entries, registry->count * sizeof (Entry));
-    Entry internal = registry->entries[registry->count - 1];
-    internal.displayName = e->displayName;
-    internal.name = e->name;
-    internal.version = e->version;
-    internal.id = e->id;
+    Entry* old = registry->entries;
+    Entry* new = (Entry*) malloc(registry->count * sizeof(Entry));
+    for (int i = 0; i < (registry->count - 1); i++) {
+        new[i] = old[i];
+    }
+    new[registry->count - 1] = *e;
+    registry->entries = new;
+    free(old);
 }
 
 void removeEntry(Registry* registry, Entry* e) {

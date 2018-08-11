@@ -22,6 +22,7 @@ public class Main {
     public static final AtomicBoolean running = new AtomicBoolean(true);
     private static final char[] HEX = "0123456789abcdef".toCharArray();
     private static final File ROOT_FOLDER = new File(".", "games");
+    private static final File INFO_FOLDER = new File(".", "info");
     private static final byte[] ERROR_404 = "404 not found".getBytes();
 
     static {
@@ -90,11 +91,11 @@ public class Main {
                     ByteArrayOutputStream baos = new ByteArrayOutputStream();
                     baos.write(encodeHex(ROOT_FOLDER.listFiles().length));
                     for (File file : ROOT_FOLDER.listFiles()) {
-                        byte[] name = file.getName()/*.replaceAll(".nds", "")*/.getBytes();
+                        byte[] name = file.getName().getBytes();
                         baos.write(encodeHex(name.length));
                         baos.write(name);
-                        baos.write(encodeHex(1)); //version
-                        //baos.write(encodeHex(file.getName().hashCode() & 0xFFFFFF)); //id
+                        baos.write(encodeHex(getVersion(file.getName()))); //version
+                        baos.write(encodeHex(file.getName().hashCode() & 0xFFFFFFF)); //id
                     }
                     bytes = baos.toByteArray();
                     break;
@@ -172,9 +173,14 @@ public class Main {
     }
 
     public static int getVersion(String name) throws IOException {
-        FileInputStream fis = new FileInputStream(new File(ROOT_FOLDER, name + ".version"));
-        int localVersion = Integer.parseInt(new String(IOUtils.readFully(fis, -1, false)));
-        fis.close();
-        return localVersion;
+        File file = new File(INFO_FOLDER, name + ".info");
+        if (file.exists()) {
+            FileInputStream fis = new FileInputStream(file);
+            int localVersion = Integer.parseInt(new String(IOUtils.readFully(fis, -1, false)).trim());
+            fis.close();
+            return localVersion;
+        } else {
+            return 2;
+        }
     }
 }

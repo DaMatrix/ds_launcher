@@ -22,9 +22,10 @@ typedef struct {
 
 Registry parseRegistry(char* text, bool shouldFree);
 char* encodeRegistry(Registry* registry);
+void saveRegistry(Registry* registry, char* name);
 
-Entry getEntryAtIndex(Registry* registry, int i);
-Entry getCurrentEntry(Registry* registry);
+Entry* getEntryAtIndex(Registry* registry, int i);
+Entry* getCurrentEntry(Registry* registry);
 
 void addEntry(Registry* registry, Entry* e);
 void removeEntry(Registry* registry, Entry* e);

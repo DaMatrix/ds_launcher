@@ -38,6 +38,21 @@ char* encodeHex(int val) {
     return letters;
 }
 
+char* encodeHexTerm(int val) {
+    char* letters = (char*) malloc(9 * sizeof(char));
+    for (int i = 0; i < 8; i++) {
+        letters[i] = hex[(val >> (i << 2)) & 0xF];
+    }
+    letters[8] = 0;
+    return letters;
+}
+
+void encodeHexTo(int val, char* to, int at) {
+    for (int i = 0; i < 8; i++) {
+        to[i + at] = hex[(val >> (i << 2)) & 0xF];
+    }
+}
+
 int roundUp(int numToRound, int multiple) {
     if (multiple == 0) {
         return numToRound;

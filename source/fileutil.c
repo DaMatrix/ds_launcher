@@ -1,14 +1,12 @@
 #include <fileutil.h>
 
 char* readWholeFile(char* name, char* def) {
-    if (access(name, R_OK) != -1) {
-        FILE* fp = fopen(name, "r");
-        if (fp == NULL) {
-            //this fixes calling free() on the output of this function if def is a hardcoded string
-            char* hotfix = (char*) malloc(strlen(def) * sizeof(char));
-            sprintf(hotfix, "%s", def);
-            return hotfix;
-        }
+    char* aName = (char*) malloc(17 + strlen(name));
+    sprintf(aName, "/porkstore_index/%s", name);
+    free(name);
+    if (access(aName, R_OK) != -1) {
+        FILE* fp = fopen(aName, "r");
+        free(aName);
         fseek(fp, 0L, SEEK_END);
         int len = ftell(fp) + 1;
         rewind(fp);
@@ -17,19 +15,22 @@ char* readWholeFile(char* name, char* def) {
         fclose(fp);
         return content;
     } else {
-        return def;
+        free(aName);
+        return "00000000";
     }
 }
 
 void replaceFile(char* name, char* content) {
-    char* tempName = (char*) malloc((strlen(name) + 5) * sizeof(char));
-    sprintf(tempName, "%s.temp", name);
-    
-    FILE* fp = fopen(tempName, "w");
-    fputs(content, fp);
-    fclose(fp);
-    
-    remove(name);
-    rename(tempName, name);
+    char* tempName = (char*) malloc((strlen(name) + 17) * sizeof(char));
+    sprintf(tempName, "/porkstore_index/%s", name);
+    free(name);
+
+    FILE* fp = fopen(name, "w");
     free(tempName);
+    fprintf(fp, "%s", content);
+    fclose(fp);
+
+    //remove(name);
+    //rename(tempName, name);
+    //free(tempName);
 }

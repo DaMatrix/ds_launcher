@@ -93,7 +93,7 @@ void downloadFile(Entry* entry) {
     char* request_text = (char*) malloc((60 + strlen(entry->name) + 23) * sizeof (char));
     sprintf(request_text, "GET /download/%s HTTP/1.1\r\nHost: ds-store.daporkchop.net\r\nUser-Agent: Nintendo DS\r\n\r\n", entry->name);
 
-    iprintf(request_text);
+    iprintf("%s\n", request_text);
 
     // Create a TCP socket
     int my_socket;
@@ -130,7 +130,7 @@ void downloadFile(Entry* entry) {
     remove(origFile);
     FILE* fp = fopen(origFile, "wb");
 
-    iprintf("Printing incoming data:\n");
+    iprintf("Downloading file...\n");
     while (recv(my_socket, incoming_buffer, 1, 0) > 0) { // if recv returns 0, the socket has been closed.
         switch (stage) {
             case 0:
@@ -145,7 +145,7 @@ void downloadFile(Entry* entry) {
                     total = decodeHex(lengthBuffer);
                     stage++;
                     //data = (char*) malloc((length = decodeHex(lengthBuffer)) * sizeof(char));
-                    iprintf("Reading %u bytes (hex: %s)...\n", buf.size, lengthBuffer);
+                    iprintf("Reading %u bytes...\n", total);
                     free(lengthBuffer);
                     received = 0;
                 }
