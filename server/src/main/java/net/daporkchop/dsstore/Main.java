@@ -41,7 +41,7 @@ public class Main {
             final String path = exchange.getRequestURI().getPath();
             System.out.println(path);
             if (path.startsWith("/download")) {
-                File file = new File(ROOT_FOLDER, path.replaceFirst("/download/", ""));
+                File file = new File(ROOT_FOLDER, path.replaceFirst("/download/", "").replaceAll("~", " "));
                 System.out.println(file.getAbsolutePath() + ' ' + file.exists());
                 len = (int) file.length();
                 data = new FileInputStream(file);

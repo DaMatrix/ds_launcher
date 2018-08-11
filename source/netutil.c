@@ -90,9 +90,19 @@ LOOP:
 }
 
 void downloadFile(Entry* entry) {
-    char* request_text = (char*) malloc((60 + strlen(entry->name) + 23) * sizeof (char));
-    sprintf(request_text, "GET /download/%s HTTP/1.1\r\nHost: ds-store.daporkchop.net\r\nUser-Agent: Nintendo DS\r\n\r\n", entry->name);
-
+    char* spaceless = (char*) malloc((strlen(entry->name) + 1) * sizeof(char));
+    for (int i = 0; i < strlen(entry->name); i++)   {
+        char c = entry->name[i];
+        if (c == ' ')   {
+            c = '~';
+        }
+        spaceless[i] = c;
+    }
+    spaceless[strlen(entry->name)] = 0;
+    char* request_text = (char*) malloc((60 + strlen(spaceless) + 23) * sizeof (char));
+    sprintf(request_text, "GET /download/%s HTTP/1.1\r\nHost: ds-store.daporkchop.net\r\nUser-Agent: Nintendo DS\r\n\r\n", spaceless);
+    free(spaceless);
+    
     iprintf("%s\n", request_text);
 
     // Create a TCP socket
@@ -174,7 +184,10 @@ LOOP:
 
     shutdown(my_socket, 0); // good practice to shutdown the socket.
     closesocket(my_socket); // remove the socket.
-
+    
+    char* verHex = encodeHex(entry->version);
+    fwrite(verHex, 1, 8, fp);
+    free(verHex);
     fclose(fp);
 
     iprintf("Done! Read %u bytes!\n", total);

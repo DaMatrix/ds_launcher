@@ -42,9 +42,6 @@ int main(void) {
     Registry registry = parseRegistry(requestData("/index.txt"), true);
     //Registry registry = parseRegistry("20000000f0000000DaPorkchop_.png20000000fbf2909080000000logo.bmp300000002ce58c80", false);
 
-    Registry local = parseRegistry(readWholeFile("/porkstore_index.txt", "00000000"), true);
-    //replaceFile("/porkstore_index.txt", "00000000\nYou've been JEFFED");
-
     /*if (1) {
         iprintf("%u\n", local.count);
         for (int i = 0; i < local.count; i++) {
@@ -78,52 +75,74 @@ int main(void) {
                 registry.current_scroll++;
                 goto DRAW_MENU;
             }
+            if ((keys & KEY_L)) {
+                registry.current_scroll -= 5;
+                goto DRAW_MENU;
+            }
+            if ((keys & KEY_R)) {
+                registry.current_scroll += 5;
+                goto DRAW_MENU;
+            }
             if ((keys & KEY_A)) {
                 mode = 1;
                 goto DRAW_ITEM;
             }
-            if ((keys % KEY_X)) {
+            if ((keys & KEY_X)) {
                 goto CHECK_UPDATES;
+            }
+            if ((keys & KEY_SELECT)) {
+                Entry* entry = getCurrentEntry(&registry);
+                entry->batch = true;
+                goto DRAW_MENU;
+            }
+            if ((keys & KEY_START)) {
+                Entry* entry = getCurrentEntry(&registry);
+                entry->batch = false;
+                goto DRAW_MENU;
+            }
+            if ((keys & KEY_Y)) {
+                //clear current registry
+                for (int i = 0; i < registry.count; i++) {
+                    Entry* entry = &registry.entries[i];
+                    free(entry->displayName);
+                    free(entry->name);
+                    entry->id = 0;
+                    entry->version = 0;
+                }
+                free(registry.entries);
+                registry.count = 0;
+                registry = parseRegistry(requestData("/index.txt"), true);
+                goto DRAW_MENU;
             }
         } else if (mode == 1) {
             if ((keys & KEY_X)) {
                 Entry* upstream = getCurrentEntry(&registry);
-                int localVersion = decodeHex(readWholeFile(encodeHexTerm(entry->id)));
-CHECK:
+                int localVersion = getLocalVersion(upstream);
+                int remoteVersion = upstream->version;
                 if (localVersion != 0) {
                     //game is already owned
-                    if (upstream->version > localVersion) {
-                        current->version = upstream->version;
+                    if (remoteVersion > localVersion) {
+                        localVersion = remoteVersion;
                     } else {
                         iprintf("\n\n\n\n\n\n\n\n\n\n\nGame already installed,\nno updates found!\n\nPress B to continue\n\n\n\n\n\n\n\n\n");
                         mode = 2;
                         goto WAIT;
                     }
-                } else {
-                    iprintf("Adding entry to registry\n");
-                    addEntry(&local, upstream);
                 }
                 downloadFile(upstream);
 
-                iprintf("Encoding registry to text\n");
-                char* encoded = encodeRegistry(&local);
-                iprintf("Writing registry to disk\n");
-                iprintf("%s\n", encoded);
-                replaceFile("/porkstore_index.txt", encoded);
-                iprintf("Written!\n");
-                free(encoded);
                 iprintf("Done!\n");
-                mode = -1;
-                //goto DRAW_MENU;
+                mode = 0;
+                goto DRAW_MENU;
             }
             if ((keys & KEY_B)) {
-                mode = -1;
-                //goto DRAW_MENU;
+                mode = 0;
+                goto DRAW_MENU;
             }
         } else if (mode == 2) {
             if ((keys & KEY_B)) {
-                mode = -1;
-                //goto DRAW_MENU;
+                mode = 0;
+                goto DRAW_MENU;
             }
         }
 
@@ -132,26 +151,22 @@ DRAW_MENU:
             while (0) {
             }
             //excuse this mess please, but it goes faster than a loop
-            iprintf("Press X to check for updates\n\n  %s\n  %s\n  %s\n  %s\n  %s\n  %s\n  %s\n  %s\n  %s\n> %s\n  %s\n  %s\n  %s\n  %s\n  %s\n  %s\n  %s\n  %s\n  %s\n\n\n",
-                    getEntryAtIndex(&registry, -9)->displayName,
-                    getEntryAtIndex(&registry, -8)->displayName,
-                    getEntryAtIndex(&registry, -7)->displayName,
-                    getEntryAtIndex(&registry, -6)->displayName,
-                    getEntryAtIndex(&registry, -5)->displayName,
-                    getEntryAtIndex(&registry, -4)->displayName,
-                    getEntryAtIndex(&registry, -3)->displayName,
-                    getEntryAtIndex(&registry, -2)->displayName,
-                    getEntryAtIndex(&registry, -1)->displayName,
-                    getEntryAtIndex(&registry, 0)->displayName,
-                    getEntryAtIndex(&registry, 1)->displayName,
-                    getEntryAtIndex(&registry, 2)->displayName,
-                    getEntryAtIndex(&registry, 3)->displayName,
-                    getEntryAtIndex(&registry, 4)->displayName,
-                    getEntryAtIndex(&registry, 5)->displayName,
-                    getEntryAtIndex(&registry, 6)->displayName,
-                    getEntryAtIndex(&registry, 7)->displayName,
-                    getEntryAtIndex(&registry, 8)->displayName,
-                    getEntryAtIndex(&registry, 9)->displayName);
+            iprintf("X to run updates+batch\nY to refresh list\nL/R to scroll fast\nSEL to add batch item\nSTART to remove batch item\n\n %s%s\n %s%s\n %s%s\n %s%s\n %s%s\n %s%s\n %s%s\n>%s%s\n %s%s\n %s%s\n %s%s\n %s%s\n %s%s\n %s%s\n %s%s\n\n\n",
+                    getEntryAtIndex(&registry, -7)->batch ? "#" : " ", getEntryAtIndex(&registry, -7)->displayName,
+                    getEntryAtIndex(&registry, -6)->batch ? "#" : " ", getEntryAtIndex(&registry, -6)->displayName,
+                    getEntryAtIndex(&registry, -5)->batch ? "#" : " ", getEntryAtIndex(&registry, -5)->displayName,
+                    getEntryAtIndex(&registry, -4)->batch ? "#" : " ", getEntryAtIndex(&registry, -4)->displayName,
+                    getEntryAtIndex(&registry, -3)->batch ? "#" : " ", getEntryAtIndex(&registry, -3)->displayName,
+                    getEntryAtIndex(&registry, -2)->batch ? "#" : " ", getEntryAtIndex(&registry, -2)->displayName,
+                    getEntryAtIndex(&registry, -1)->batch ? "#" : " ", getEntryAtIndex(&registry, -1)->displayName,
+                    getEntryAtIndex(&registry, 0)->batch ? "#" : " ", getEntryAtIndex(&registry, 0)->displayName,
+                    getEntryAtIndex(&registry, 1)->batch ? "#" : " ", getEntryAtIndex(&registry, 1)->displayName,
+                    getEntryAtIndex(&registry, 2)->batch ? "#" : " ", getEntryAtIndex(&registry, 2)->displayName,
+                    getEntryAtIndex(&registry, 3)->batch ? "#" : " ", getEntryAtIndex(&registry, 3)->displayName,
+                    getEntryAtIndex(&registry, 4)->batch ? "#" : " ", getEntryAtIndex(&registry, 4)->displayName,
+                    getEntryAtIndex(&registry, 5)->batch ? "#" : " ", getEntryAtIndex(&registry, 5)->displayName,
+                    getEntryAtIndex(&registry, 6)->batch ? "#" : " ", getEntryAtIndex(&registry, 6)->displayName,
+                    getEntryAtIndex(&registry, 7)->batch ? "#" : " ", getEntryAtIndex(&registry, 7)->displayName);
             goto WAIT;
         }
         if (false) {
@@ -159,14 +174,37 @@ DRAW_ITEM:
             while (0) {
             }
             Entry* entry = getCurrentEntry(&registry);
-            int localVersion = decodeHex(readWholeFile(encodeHexTerm(entry->id)));
+            int localVersion = getLocalVersion(entry);
             iprintf("\n%s\n\nLatest version:    %u\nInstalled version: %u\n\nPress X to download\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n", entry->displayName, entry->version, localVersion);
         }
         if (false) {
 CHECK_UPDATES:
             while (0) {
             }
-            downloadFile("/download/DaPorkchop_.png");
+            for (registry.current_scroll = 0; registry.current_scroll < registry.count; registry.current_scroll++) {
+                Entry* upstream = getCurrentEntry(&registry);
+                int localVersion = getLocalVersion(upstream);
+                int remoteVersion = upstream->version;
+                if (upstream->batch) {
+                    upstream->batch = false;
+                } else if (localVersion != 0) {
+                    //game is already owned
+                    if (remoteVersion > localVersion) {
+                        localVersion = remoteVersion;
+                    } else {
+                        goto DONE;
+                    }
+                } else {
+                    goto DONE;
+                }
+                downloadFile(upstream);
+DONE:
+                iprintf("Done!\n");
+            }
+            registry.current_scroll = roundUp(1 << 30, registry.count);
+            iprintf("\n\n\n\n\n\n\n\n\n\n\n\nUpdating finished!\n\nPress B to continue\n\n\n\n\n\n\n\n\n");
+            mode = 2;
+            goto WAIT;
         }
         if (false) {
 WAIT:

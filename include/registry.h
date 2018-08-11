@@ -12,6 +12,8 @@ typedef struct {
     char* displayName;
     int version;
     int id;
+    bool batch;
+    //char* prefix;
 } Entry;
 
 typedef struct {
@@ -21,14 +23,11 @@ typedef struct {
 } Registry;
 
 Registry parseRegistry(char* text, bool shouldFree);
-char* encodeRegistry(Registry* registry);
-void saveRegistry(Registry* registry, char* name);
 
 Entry* getEntryAtIndex(Registry* registry, int i);
 Entry* getCurrentEntry(Registry* registry);
 
-void addEntry(Registry* registry, Entry* e);
-void removeEntry(Registry* registry, Entry* e);
+//void tryMarkBatch(Entry* entry, bool batch);
 
 #endif /* REGISTRY_H */
 
