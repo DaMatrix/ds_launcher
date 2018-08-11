@@ -17,11 +17,12 @@ void initNetworking() {
     iprintf("Ready!\n\n");
 }
 
-char* requestData(char* url) {
-    char* request_text = (char*) malloc((50 + strlen(url) + 23) * sizeof (char));
-    sprintf(request_text, "GET %s HTTP/1.1\r\nHost: ds-store.daporkchop.net\r\nUser-Agent: Nintendo DS\r\n\r\n", url);
+char* requestIndex() {
+    char* request_text = "a0000000/index.txt";
+    //char* request_text = (char*) malloc((50 + strlen(url) + 23) * sizeof (char));
+    //sprintf(request_text, "GET %s HTTP/1.1\r\nHost: ds-store.daporkchop.net\r\nUser-Agent: Nintendo DS\r\n\r\n", url);
 
-    iprintf(request_text);
+    iprintf("%s\n", request_text);
 
     // Create a TCP socket
     int my_socket;
@@ -38,7 +39,7 @@ char* requestData(char* url) {
 
     // send our request
     send(my_socket, request_text, strlen(request_text), 0);
-    free(request_text);
+    //free(request_text);
     iprintf("Sent our request!\n");
 
     // Print incoming data
@@ -99,11 +100,11 @@ void downloadFile(Entry* entry) {
         spaceless[i] = c;
     }
     spaceless[strlen(entry->name)] = 0;
-    char* request_text = (char*) malloc((60 + strlen(spaceless) + 23) * sizeof (char));
-    sprintf(request_text, "GET /download/%s HTTP/1.1\r\nHost: ds-store.daporkchop.net\r\nUser-Agent: Nintendo DS\r\n\r\n", spaceless);
-    free(spaceless);
+    //char* request_text = (char*) malloc((60 + strlen(spaceless) + 23) * sizeof (char));
+    //sprintf(request_text, "GET /download/%s HTTP/1.1\r\nHost: ds-store.daporkchop.net\r\nUser-Agent: Nintendo DS\r\n\r\n", spaceless);
+    //free(spaceless);
     
-    iprintf("%s\n", request_text);
+    //iprintf("%s\n", request_text);
 
     // Create a TCP socket
     int my_socket;
@@ -119,8 +120,13 @@ void downloadFile(Entry* entry) {
     iprintf("Connected to server!\n");
 
     // send our request
-    send(my_socket, request_text, strlen(request_text), 0);
-    free(request_text);
+    //send(my_socket, request_text, strlen(request_text), 0);
+    //free(request_text);
+    char* lenA = encodeHexTerm(strlen(spaceless));
+    send(my_socket, lenA, 8, 0);
+    free(lenA);
+    send(my_socket, spaceless, strlen(spaceless), 0);
+    free(spaceless);
     iprintf("Sent our request!\n");
 
     // Print incoming data

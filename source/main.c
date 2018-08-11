@@ -39,7 +39,7 @@ int main(void) {
     //iprintf("%s\n", requestData("/a"));
     //iprintf("%s\n", requestData("/b"));
 
-    Registry registry = parseRegistry(requestData("/index.txt"), true);
+    Registry registry = parseRegistry(requestIndex(), true);
     //Registry registry = parseRegistry("20000000f0000000DaPorkchop_.png20000000fbf2909080000000logo.bmp300000002ce58c80", false);
 
     /*if (1) {
@@ -106,12 +106,12 @@ int main(void) {
                     Entry* entry = &registry.entries[i];
                     free(entry->displayName);
                     free(entry->name);
-                    entry->id = 0;
+                    //entry->id = 0;
                     entry->version = 0;
                 }
                 free(registry.entries);
                 registry.count = 0;
-                registry = parseRegistry(requestData("/index.txt"), true);
+                registry = parseRegistry(requestIndex(), true);
                 goto DRAW_MENU;
             }
         } else if (mode == 1) {
@@ -202,6 +202,9 @@ DONE:
                 iprintf("Done!\n");
             }
             registry.current_scroll = roundUp(1 << 30, registry.count);
+            for (int i = 0; i < 300; i++) {
+                swiWaitForVBlank();
+            }
             iprintf("\n\n\n\n\n\n\n\n\n\n\n\nUpdating finished!\n\nPress B to continue\n\n\n\n\n\n\n\n\n");
             mode = 2;
             goto WAIT;

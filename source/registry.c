@@ -27,12 +27,11 @@ Registry parseRegistry(char* text, bool shouldFree) {
             index += len;
             entry.name[len] = 0;
             entry.displayName[min(len, MAX_NAME_LENGTH)] = 0; //NULL-terminate
-            iprintf("%u (%u bytes) - %s", i, len, entry.displayName);
-            iprintf("\n");
+            iprintf("%u (%u bytes) - %s\n", i, len, entry.displayName);
             entry.version = decodeHexOffset(text, index);
             index += 8;
-            entry.id = decodeHexOffset(text, index);
-            index += 8;
+            //entry.id = decodeHexOffset(text, index);
+            //index += 8;
             entry.batch = false;
             //entry.prefix = def_prefix;
             registry.entries[i] = entry;

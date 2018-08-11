@@ -11,7 +11,7 @@ typedef struct {
     char* name;
     char* displayName;
     int version;
-    int id;
+    //int id;
     bool batch;
     //char* prefix;
 } Entry;
