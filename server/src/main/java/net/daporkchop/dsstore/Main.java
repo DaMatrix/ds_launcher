@@ -13,8 +13,12 @@ import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Hashtable;
+import java.util.List;
+import java.util.Map;
 import java.util.Queue;
 import java.util.Scanner;
 import java.util.Set;
@@ -29,7 +33,6 @@ public class Main {
     private static final char[] HEX = "0123456789abcdef".toCharArray();
     private static final File ROOT_FOLDER = new File(".", "games");
     private static final File INFO_FOLDER = new File(".", "info");
-    private static final byte[] ERROR_404 = "404 not found".getBytes();
 
     static {
         if (!ROOT_FOLDER.exists()) {
@@ -38,6 +41,55 @@ public class Main {
     }
 
     public static void main(String... args) throws IOException {
+        if (args.length == 1 && "cleanup".equals(args[0]))  {
+            File[] files = ROOT_FOLDER.listFiles();
+            Map<String, Character> finishedGames = new Hashtable<>();
+            for (File file : files) {
+                RENAME:
+                {
+                    String name = file.getName();
+                    try {
+                        int i = Integer.parseInt(name.substring(0, 4));
+                        if (name.substring(4, 7).equals(" - ")) {
+                            name = name.substring(7);
+                        }
+                    } catch (NumberFormatException e) {
+                    }
+                    if (!(name.contains("(U)") || name.contains("(E)")))    {
+                        break RENAME;
+                    }
+                    char[] text = name.toCharArray();
+                    char region = text[0];
+                    int i;
+                    for (i = 1; i < text.length; i++)   {
+                        if (region == '(' && text[i + 1] == ')')    {
+                            region = text[i];
+                            break;
+                        }
+                        region = text[i];
+                    }
+                    if (!(region == 'U' || region == 'E'))  {
+                        break RENAME;
+                    }
+                    String trimmed = name.substring(0, i - 2);
+                    System.out.println(trimmed);
+                    CHECKREGION:if (finishedGames.containsKey(trimmed)) {
+                        if (region == 'U' && finishedGames.get(trimmed) == 'E') {
+                            break CHECKREGION;
+                        } else {
+                            break RENAME;
+                        }
+                    }
+                    file.renameTo(new File(ROOT_FOLDER, trimmed + ".nds"));
+                    finishedGames.put(trimmed, region);
+                    continue;
+                }
+                System.out.println("Deleting " + file.getName());
+                file.delete();
+            }
+            return;
+        }
+
         ServerSocket server = new ServerSocket(8236);
         new Thread(() -> {
             Scanner s = new Scanner(System.in);
@@ -89,75 +141,6 @@ public class Main {
                 break;
             }
         }
-
-        /*HttpServer server = HttpServer.create(new InetSocketAddress(8236), 4);
-        server.createContext("/", exchange -> {
-            exchange.getResponseHeaders().set("Content-Type", "text/html; charset=windows-1252");
-            byte[] bytes = null;
-            InputStream data = null;
-            int len = -1;
-            final String path = exchange.getRequestURI().getPath();
-            System.out.println(path);
-            if (path.startsWith("/download")) {
-                File file = new File(ROOT_FOLDER, path.replaceFirst("/download/", "").replaceAll("~", " "));
-                System.out.println(file.getAbsolutePath() + ' ' + file.exists());
-                len = (int) file.length();
-                data = new FileInputStream(file);
-            }
-            switch (path) {
-                case "/index.txt":
-                    ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                    baos.write(encodeHex(ROOT_FOLDER.listFiles().length));
-                    for (File file : ROOT_FOLDER.listFiles()) {
-                        byte[] name = file.getName().getBytes();
-                        baos.write(encodeHex(name.length));
-                        baos.write(name);
-                        baos.write(encodeHex(getVersion(file.getName()))); //version
-                        baos.write(encodeHex(file.getName().hashCode() & 0xFFFFFFF)); //id
-                    }
-                    bytes = baos.toByteArray();
-                    break;
-                case "/a":
-                    bytes = "hello AAA".getBytes();
-                    break;
-                case "/b":
-                    bytes = "hello BBB".getBytes();
-                    break;
-            }
-            if (len == -1L && bytes != null) {
-                len = bytes.length;
-            }
-            if (data == null && bytes != null) {
-                data = new ByteArrayInputStream(bytes);
-                len = bytes.length;
-            }
-            if (data == null) {
-                data = new ByteArrayInputStream(ERROR_404);
-                exchange.sendResponseHeaders(404, ERROR_404.length);
-            } else {
-                exchange.sendResponseHeaders(200, len + 9L); //add 9 bytes for start padding
-            }
-            OutputStream os = exchange.getResponseBody();
-            {
-                //start padding
-                os.write(127);
-                os.write(encodeHex(len));
-            }
-            byte[] buf = new byte[256];
-            while (true) {
-                int read = data.read(buf);
-                if (read == -1) {
-                    break;
-                }
-                os.write(buf, 0, read);
-            }
-            data.close();
-            os.flush();
-            os.close();
-            exchange.close();
-        });
-        server.setExecutor(null);
-        server.start();*/
     }
 
     public static byte[] encodeHex(int val) {
@@ -190,7 +173,7 @@ public class Main {
             fis.close();
             return localVersion;
         } else {
-            return 2;
+            return 3;
         }
     }
 
