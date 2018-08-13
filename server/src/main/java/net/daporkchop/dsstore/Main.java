@@ -13,11 +13,9 @@ import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Hashtable;
-import java.util.List;
 import java.util.Map;
 import java.util.Queue;
 import java.util.Scanner;
@@ -33,6 +31,7 @@ public class Main {
     private static final char[] HEX = "0123456789abcdef".toCharArray();
     private static final File ROOT_FOLDER = new File(".", "games");
     private static final File INFO_FOLDER = new File(".", "info");
+    private static byte[] FILE_LIST;
 
     static {
         if (!ROOT_FOLDER.exists()) {
@@ -41,7 +40,7 @@ public class Main {
     }
 
     public static void main(String... args) throws IOException {
-        if (args.length == 1 && "cleanup".equals(args[0]))  {
+        if (args.length == 1 && "cleanup".equals(args[0])) {
             File[] files = ROOT_FOLDER.listFiles();
             Map<String, Character> finishedGames = new Hashtable<>();
             for (File file : files) {
@@ -49,35 +48,62 @@ public class Main {
                 {
                     String name = file.getName();
                     try {
-                        int i = Integer.parseInt(name.substring(0, 4));
+                        Integer.parseInt(name.substring(0, 4));
                         if (name.substring(4, 7).equals(" - ")) {
                             name = name.substring(7);
                         }
                     } catch (NumberFormatException e) {
                     }
-                    if (!(name.contains("(U)") || name.contains("(E)")))    {
+                    if (!(name.contains("(U)") || name.contains("(E)") || name.contains("(US)") || name.contains("(EU)"))) {
                         break RENAME;
                     }
                     char[] text = name.toCharArray();
                     char region = text[0];
                     int i;
-                    for (i = 1; i < text.length; i++)   {
-                        if (region == '(' && text[i + 1] == ')')    {
+                    for (i = 1; i < text.length; i++) {
+                        if (region == '(' && text[i + 1] == ')') {
                             region = text[i];
                             break;
                         }
+                        if (region == '(' && text[i + 2] == ')') {
+                            if (text[i] == 'U' && text[i + 1] == 'S') {
+                                region = 'U';
+                                break;
+                            }
+                            if (text[i] == 'E' && text[i + 1] == 'U') {
+                                region = 'E';
+                                break;
+                            }
+                            break RENAME;
+                        }
+                        if (region == '(' && text[i + 3] == ')') {
+                            if (text[i] == 'U' && text[i + 1] == 'S' && text[i + 2] == 'A') {
+                                region = 'U';
+                                break;
+                            }
+                            break RENAME;
+                        }
                         region = text[i];
                     }
-                    if (!(region == 'U' || region == 'E'))  {
+                    if (!(region == 'U' || region == 'E')) {
                         break RENAME;
                     }
                     String trimmed = name.substring(0, i - 2);
                     System.out.println(trimmed);
-                    CHECKREGION:if (finishedGames.containsKey(trimmed)) {
+                    CHECKREGION:
+                    if (finishedGames.containsKey(trimmed)) {
                         if (region == 'U' && finishedGames.get(trimmed) == 'E') {
                             break CHECKREGION;
                         } else {
                             break RENAME;
+                        }
+                    }
+                    //strip extra things
+                    if (trimmed.contains("(")) {
+                        boolean dsiEnhanced = trimmed.toLowerCase().contains("(dsi enhanced)");
+                        trimmed = trimmed.substring(0, trimmed.indexOf("(")).trim();
+                        if (dsiEnhanced) {
+                            trimmed += " (DSi Enhanced)";
                         }
                     }
                     file.renameTo(new File(ROOT_FOLDER, trimmed + ".nds"));
@@ -118,7 +144,7 @@ public class Main {
                         }
                         t.interrupt();
                         toRemove.add(t);
-                    } else if (!t.isAlive())    {
+                    } else if (!t.isAlive()) {
                         toRemove.add(t);
                     }
                 });
@@ -129,6 +155,31 @@ public class Main {
                 } catch (InterruptedException e) {
                 }
             }
+        }).start();
+
+        new Thread(() -> {
+            do  {
+                for (int i = 0; i < 60 && !server.isClosed(); i++) {
+                    try {
+                        Thread.sleep(1000L);
+                    } catch (InterruptedException e)    {
+                    }
+                }
+                try {
+                    ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                    baos.write(encodeHex(ROOT_FOLDER.listFiles().length));
+                    for (File file : ROOT_FOLDER.listFiles()) {
+                        byte[] name = file.getName().getBytes();
+                        baos.write(encodeHex(name.length));
+                        baos.write(name);
+                        baos.write(encodeHex(getVersion(file.getName()))); //version
+                        //baos.write(encodeHex(file.getName().hashCode() & 0xFFFFFFF)); //id
+                    }
+                    FILE_LIST = baos.toByteArray();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }while (!server.isClosed());
         }).start();
 
         while (!server.isClosed()) {
@@ -210,16 +261,7 @@ public class Main {
                 }
                 switch (path) {
                     case "/index.txt":
-                        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                        baos.write(encodeHex(ROOT_FOLDER.listFiles().length));
-                        for (File file : ROOT_FOLDER.listFiles()) {
-                            byte[] name = file.getName().getBytes();
-                            baos.write(encodeHex(name.length));
-                            baos.write(name);
-                            baos.write(encodeHex(getVersion(file.getName()))); //version
-                            //baos.write(encodeHex(file.getName().hashCode() & 0xFFFFFFF)); //id
-                        }
-                        bytes = baos.toByteArray();
+                        bytes = FILE_LIST;
                         break;
                 }
                 if (len == -1L && bytes != null) {
