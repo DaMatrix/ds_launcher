@@ -36,26 +36,7 @@ int main(void) {
     iprintf("\n\n\tStarting the PorkStore...\n\n");
     initNetworking();
 
-    //iprintf("%s\n", requestData("/a"));
-    //iprintf("%s\n", requestData("/b"));
-
     Registry registry = parseRegistry(requestIndex(), true);
-    //Registry registry = parseRegistry("20000000f0000000DaPorkchop_.png20000000fbf2909080000000logo.bmp300000002ce58c80", false);
-
-    /*if (1) {
-        iprintf("%u\n", local.count);
-        for (int i = 0; i < local.count; i++) {
-            Entry entry = local.entries[i];
-            iprintf("%u - %s (v%u)\n", i, entry->displayName, entry.version);
-        }
-
-        while (1) {
-            swiWaitForVBlank();
-            int keys = keysDown();
-            if (keys & KEY_START) break;
-        }
-        return 0;
-    }*/
 
     int mode = -1;
 
@@ -139,10 +120,36 @@ int main(void) {
                 mode = 0;
                 goto DRAW_MENU;
             }
+            if ((keys & KEY_Y)) {
+                mode = 3;
+                goto DRAW_CONFIRM_REMOVE;
+            }
         } else if (mode == 2) {
             if ((keys & KEY_B)) {
                 mode = 0;
                 goto DRAW_MENU;
+            }
+        } else if (mode == 3) {
+            if ((keys & KEY_B)) {
+                mode = 1;
+                goto DRAW_ITEM;
+            }
+            if ((keys & KEY_A)) {
+                Entry* entry = getCurrentEntry(&registry);
+                remove(entry->name);
+                int len = strlen(entry->name);
+                char* sav = (char*) malloc((len + 1) * sizeof(char));
+                for (int i = len - 1; i >= 0; i--)  {
+                    sav[i] = entry->name[i];
+                }
+                sav[len] = 0;
+                sav[len - 3] = 's';
+                sav[len - 2] = 'a';
+                sav[len - 1] = 'v';
+                remove(sav);
+                free(sav);
+                mode = 2;
+                goto DRAW_REMOVED;
             }
         }
 
@@ -175,7 +182,19 @@ DRAW_ITEM:
             }
             Entry* entry = getCurrentEntry(&registry);
             int localVersion = getLocalVersion(entry);
-            iprintf("\n%s\n\nLatest version:    %u\nInstalled version: %u\n\nPress X to download\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n", entry->displayName, entry->version, localVersion);
+            iprintf("Name:\n%s\n\nLatest version:    %u\nInstalled version: %u\n\nPress X to download\nPress Y to uninstall\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n", entry->displayName, entry->version, localVersion);
+        }
+        if (false) {
+DRAW_CONFIRM_REMOVE:
+            while (0) {
+            }
+            iprintf("Are you sure?\n\nPress A to delete\nPress B to cancel\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n");
+        }
+        if (false) {
+DRAW_REMOVED:
+            while (0) {
+            }
+            iprintf("Removed.\n\n\nPress B to continue\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n");
         }
         if (false) {
 CHECK_UPDATES:

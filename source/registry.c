@@ -4,7 +4,7 @@ char* def_prefix = " ";
 char* batch_prefix = "#";
 
 Registry parseRegistry(char* text, bool shouldFree) {
-    iprintf("%s\n", text);
+    //iprintf("%s\n", text);
     iprintf("Parsing...\n");
     int index = 8;
     Registry registry;
@@ -27,7 +27,7 @@ Registry parseRegistry(char* text, bool shouldFree) {
             index += len;
             entry.name[len] = 0;
             entry.displayName[min(len, MAX_NAME_LENGTH)] = 0; //NULL-terminate
-            iprintf("%u (%u bytes) - %s\n", i, len, entry.displayName);
+            //iprintf("%u (%u bytes) - %s\n", i, len, entry.displayName);
             entry.version = decodeHexOffset(text, index);
             index += 8;
             //entry.id = decodeHexOffset(text, index);

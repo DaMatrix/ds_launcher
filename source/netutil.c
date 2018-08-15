@@ -43,7 +43,7 @@ char* requestIndex() {
     iprintf("Sent our request!\n");
 
     // Print incoming data
-    iprintf("Printing incoming data:\n");
+    iprintf("Reading incoming data:\n");
 
     int received = 0;
     char* incoming_buffer = (char*) malloc(2 * sizeof (char));

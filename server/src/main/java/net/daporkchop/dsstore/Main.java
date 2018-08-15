@@ -13,6 +13,7 @@ import java.io.OutputStream;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketException;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Hashtable;
@@ -51,6 +52,8 @@ public class Main {
                         Integer.parseInt(name.substring(0, 4));
                         if (name.substring(4, 7).equals(" - ")) {
                             name = name.substring(7);
+                        } else if (name.substring(4, 7).equals("_-_")) {
+                            break RENAME;
                         }
                     } catch (NumberFormatException e) {
                     }
@@ -88,7 +91,7 @@ public class Main {
                     if (!(region == 'U' || region == 'E')) {
                         break RENAME;
                     }
-                    String trimmed = name.substring(0, i - 2);
+                    String trimmed = name.substring(0, i - 1);
                     System.out.println(trimmed);
                     CHECKREGION:
                     if (finishedGames.containsKey(trimmed)) {
@@ -100,13 +103,12 @@ public class Main {
                     }
                     //strip extra things
                     if (trimmed.contains("(")) {
-                        boolean dsiEnhanced = trimmed.toLowerCase().contains("(dsi enhanced)");
                         trimmed = trimmed.substring(0, trimmed.indexOf("(")).trim();
-                        if (dsiEnhanced) {
+                        if (file.getName().toLowerCase().contains("(DSi Enhanced)".toLowerCase())) {
                             trimmed += " (DSi Enhanced)";
                         }
                     }
-                    file.renameTo(new File(ROOT_FOLDER, trimmed + ".nds"));
+                    file.renameTo(new File(ROOT_FOLDER, trimmed.trim() + ".nds"));
                     finishedGames.put(trimmed, region);
                     continue;
                 }
@@ -158,28 +160,33 @@ public class Main {
         }).start();
 
         new Thread(() -> {
-            do  {
-                for (int i = 0; i < 60 && !server.isClosed(); i++) {
-                    try {
-                        Thread.sleep(1000L);
-                    } catch (InterruptedException e)    {
-                    }
-                }
+            do {
                 try {
                     ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                    baos.write(encodeHex(ROOT_FOLDER.listFiles().length));
-                    for (File file : ROOT_FOLDER.listFiles()) {
-                        byte[] name = file.getName().getBytes();
+                    File[] files = ROOT_FOLDER.listFiles();
+                    String[] names = new String[files.length];
+                    for (int i = 0; i < files.length; i++)  {
+                        names[i] = files[i].getName();
+                    }
+                    Arrays.sort(names);
+                    baos.write(encodeHex(files.length));
+                    for (String s : names) {
+                        byte[] name = s.getBytes();
                         baos.write(encodeHex(name.length));
                         baos.write(name);
-                        baos.write(encodeHex(getVersion(file.getName()))); //version
-                        //baos.write(encodeHex(file.getName().hashCode() & 0xFFFFFFF)); //id
+                        baos.write(encodeHex(getVersion(s))); //version
                     }
                     FILE_LIST = baos.toByteArray();
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
-            }while (!server.isClosed());
+                for (int i = 0; i < 60 && !server.isClosed(); i++) {
+                    try {
+                        Thread.sleep(1000L);
+                    } catch (InterruptedException e) {
+                    }
+                }
+            } while (!server.isClosed());
         }).start();
 
         while (!server.isClosed()) {

@@ -104,6 +104,7 @@ $(BUILD):
 	@[ -d $@ ] || mkdir -p $@
 	@$(MAKE) --no-print-directory -C $(BUILD) -f $(CURDIR)/Makefile
 	@bash -c "if [ -d /media/daporkchop/3466-6433/ ]; then cp $(CURDIR)/ds_launcher.nds /media/daporkchop/3466-6433/ds_launcher.nds; sync; echo Copied ROM to SD card; else echo Not copying ROM to SD card; fi"
+	@bash -c "mv $(CURDIR)/ds_launcher.nds $(CURDIR)/DS\ Store.nds"
  
 #---------------------------------------------------------------------------------
 clean:
