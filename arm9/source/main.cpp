@@ -14,6 +14,19 @@ int main() {
 
     consoleDemoInit();
 
+    try {
+        printf("Testing errors\n");
+
+        //throw "jeff 5";
+        TCPSocket socket;
+        socket.connect("ds-store.daporkchop.net", 12345);
+        printf("Error not thrown!\n");
+        //consoleClear();
+    } catch (const char* e) {
+        printf("Caught exception!\n");
+        printf("Message: %s\n", e);
+    }
+
     printf("      Hello World!\n");
     printf("     \x1b[32mwww.devkitpro.org\n");
     printf("   \x1b[32;1mwww.daporkchop.net\x1b[39m");

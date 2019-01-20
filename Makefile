@@ -11,9 +11,9 @@ export TOPDIR	:=	$(CURDIR)
 NITRO_FILES	:= nitrofs
 
 # These set the information text in the nds file
-GAME_TITLE     := Demo
-GAME_SUBTITLE1 := built with devkitARM
-GAME_SUBTITLE2 := http://devitpro.org
+GAME_TITLE     := PorkStore
+GAME_SUBTITLE1 := made by DaPorkchop_
+GAME_SUBTITLE2 := https://daporkchop.net
 
 include $(DEVKITARM)/ds_rules
 
