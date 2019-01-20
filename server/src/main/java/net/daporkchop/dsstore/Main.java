@@ -33,6 +33,7 @@ public class Main {
     private static final File ROOT_FOLDER = new File(".", "games");
     private static final File INFO_FOLDER = new File(".", "info");
     private static byte[] FILE_LIST;
+    private static final int DEFAULT_VERSION = 4;
 
     static {
         if (!ROOT_FOLDER.exists()) {
@@ -231,7 +232,7 @@ public class Main {
             fis.close();
             return localVersion;
         } else {
-            return 3;
+            return DEFAULT_VERSION;
         }
     }
 
