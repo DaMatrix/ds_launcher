@@ -3,6 +3,6 @@
 
 #include <nds.h>
 
-const uint8 SERVER_PORT = 12345;
+const unsigned short SERVER_PORT = 8236;
 
 #endif //TEMPLATE_CONSTANTS_H

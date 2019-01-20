@@ -8,6 +8,8 @@
 #include <netdb.h>
 #include <stdexcept>
 #include <sys/socket.h>
+#include <netinet/in.h>
+#include <fcntl.h>
 
 #include "game.h"
 
@@ -17,8 +19,8 @@ class TCPSocket {
 private:
     int socketId = -1;
 public:
-    void connect(const char* url, uint16 port);
-    void connect(hostent* host, uint16 port);
+    void open(const char *url, uint16 port);
+    void open(hostent *host, uint16 port);
     void startRequestIndex();
     void download(Game* entry);
     void close();
