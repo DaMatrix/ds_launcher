@@ -26,4 +26,4 @@ link_directories(${DEVKITPRO}/libnds/include/nds/arm9)
 add_executable(template-arm9
         source/main.cpp include/main.h
         source/game.cpp include/game.h
-        include/constants.h source/netutil.cpp include/netutil.h)
+        include/constants.h source/netutil.cpp include/netutil.h include/refs.h)

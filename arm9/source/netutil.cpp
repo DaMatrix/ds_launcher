@@ -16,7 +16,7 @@ void TCPSocket::open(hostent *host, unsigned short port) {
         //configure and start socket
 
         //make socket non-blocking
-        fcntl(this->socketId, F_SETFL, O_NONBLOCK);
+        //fcntl(this->socketId, F_SETFL, O_NONBLOCK);
 
         //enable so_keepalive
         int i = 1;
@@ -30,6 +30,13 @@ void TCPSocket::open(hostent *host, unsigned short port) {
         if (connect(this->socketId, (sockaddr *) &sain, sizeof sain) < 0)   {
             throw "Unable to connect to server!";
         }
+    }
+}
+
+void TCPSocket::close() {
+    if (this->socketId != -1){
+        closesocket(this->socketId);
+        this->socketId = -1;
     }
 }
 
