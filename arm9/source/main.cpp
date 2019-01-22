@@ -48,6 +48,7 @@ int main() {
             DISPLAY_BOTTOM[x + (y << 8)] = ARGB16(1, 0, 31, 0);
         }
     }
+    drawRect(0, 0, 0, 0, 0, TOP);
 
     guiStack.push_back(gui_loading);
 

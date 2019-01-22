@@ -9,25 +9,28 @@
 
 class Element {
 private:
-    std::string name;
+    char* name;
 public:
-    Element(std::string* name)   {
-        this->name.assign(*name);
+    Element(char* name)   {
+        this->name = name;
     }
-    std::string getName();
+    ~Element() {
+        delete this->name;
+    }
+    char* getName();
     virtual Element* getParent() = 0;
 };
 
 class Category: public Element {
 private:
-    std::vector<Element>* children;
+    unsigned int children;
     Category* parent;
 public:
-    Category(std::vector<Element>* children, Category* parent, std::string* name) : Element(name)  {
+    Category(unsigned int children, Category* parent, char* name) : Element(name)  {
         this->children = children;
         this->parent = parent;
     }
-    std::vector<Element>* getChildren();
+    unsigned int getChildren();
     Element* getParent() = 0;
 };
 
@@ -35,13 +38,19 @@ class Game: public Element {
 private:
     unsigned int version;
     Category* parent;
+    u16* icon;
 public:
-    Game(unsigned int version, Category* parent, std::string* name) : Element(name)  {
+    Game(unsigned int version, Category* parent, u16* icon, char* name) : Element(name)  {
         this->version = version;
         this->parent = parent;
+        this->icon = icon;
+    }
+    ~Game() {
+        delete this->icon;
     }
     unsigned int getVersion();
     Element* getParent() = 0;
+    u16* getIcon();
 };
 
 #endif //ARM9_GAME_H

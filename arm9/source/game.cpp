@@ -1,10 +1,10 @@
 #include "game.h"
 
-std::string Element::getName() {
+char* Element::getName() {
     return this->name;
 }
 
-std::vector<Element>* Category::getChildren() {
+unsigned int Category::getChildren() {
     return this->children;
 }
 
@@ -18,4 +18,8 @@ unsigned int Game::getVersion() {
 
 Element* Game::getParent() {
     return this->parent;
+}
+
+u16* Game::getIcon() {
+    return this->icon;
 }
