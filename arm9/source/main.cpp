@@ -20,6 +20,7 @@ void vblank() {
 }
 
 int main() {
+    Font::init();
 
     try {
         printf("Testing errors\n");
@@ -32,10 +33,12 @@ int main() {
         printf("Message: %s\n", e);
     }
 
-    for (int x = SCREEN_WIDTH - 1; x >= 0; x--) {
-        for (int y = SCREEN_HEIGHT - 1; y >= 0; y--)    {
-            Gui::DISPLAY_TOP[x + (y << 8)] = ARGB16(1, 31, 0, 0);
-            Gui::DISPLAY_BOTTOM[x + (y << 8)] = ARGB16(1, 0, 31, 0);
+    if (false) {
+        for (int x = SCREEN_WIDTH - 1; x >= 0; x--) {
+            for (int y = SCREEN_HEIGHT - 1; y >= 0; y--) {
+                Gui::DISPLAY_TOP[x + (y << 8)] = ARGB16(1, 31, 0, 0);
+                Gui::DISPLAY_BOTTOM[x + (y << 8)] = ARGB16(1, 0, 31, 0);
+            }
         }
     }
 
@@ -45,8 +48,8 @@ int main() {
 
     while (true) {
         swiWaitForVBlank();
-        if (Gui::CURRENT_FRAME == 100)  {
-            error("test!");
+        if (Gui::CURRENT_FRAME == 10)  {
+            Gui::error("Hello world! 123");
         }
     }
 }

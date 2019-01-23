@@ -2,11 +2,12 @@
 #define TEMPLATE_REFS_H
 
 #include "constants.h"
+#include "font.h"
 
 #include <vector>
 #include <functional>
 
-//#define ICON_SIZE 32 //the side length of a game icon
+#define ICON_SIZE 32 //the side length of a game icon
 
 enum GuiState   {
     CONNECTING = 0,
@@ -24,7 +25,6 @@ enum Screen {
     BOTTOM = 1
 };
 
-//typedef GuiExitCode (* MenuRenderer) (int keys);
 typedef std::function<GuiExitCode (int keys)> MenuRenderer;
 
 struct Gui {
@@ -34,13 +34,14 @@ struct Gui {
     static touchPosition TOUCH_POS;
     static std::vector<MenuRenderer> MENU_STACK;
 public:
+    //draw methods
     static void drawRect(int x, int y, int w, int h, u16 argb, Screen screen);
+    static void drawText(int x, int y, u16 argb, Screen screen, const char* text);
+
+    //helper methods
+    static void error(char* msg);
 };
 
 GuiExitCode gui_loading(int keys);
-
-void error(char* msg);
-
-//draw methods
 
 #endif //TEMPLATE_REFS_H

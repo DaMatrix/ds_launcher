@@ -25,14 +25,6 @@ GuiExitCode gui_loading(int keys)  {
     return NOTHING;
 }
 
-void error(char* msg)   {
-    MenuRenderer gui = [=] (int keys) -> GuiExitCode {
-        Gui::drawRect(8, 16, 8, 64, ARGB16(1, 0, 31, 31), TOP);
-        return NOTHING;
-    };
-    Gui::MENU_STACK.push_back(gui);
-}
-
 void Gui::drawRect(int x, int y, int w, int h, u16 argb, Screen screen)  {
     if (x < 0)  {
         w += x;
@@ -53,4 +45,38 @@ void Gui::drawRect(int x, int y, int w, int h, u16 argb, Screen screen)  {
             p[x + xx + ((y + yy) << 8)] = argb;
         }
     }
+}
+
+void Gui::drawText(int x, int y, u16 argb, Screen screen, const char* text)   {
+    //i don't even know if register does anything on the nds or if i'm overusing it but hey why not
+    register int i = 0;
+    register int c;
+    register u16* p = screen == TOP ? DISPLAY_TOP : DISPLAY_BOTTOM;
+    while ((c = (unsigned char) text[i++]))    {
+        register unsigned int letter = *(Font::LETTERS + c);
+        if (letter == 0)    {
+            continue;
+        }
+        register unsigned int size = Font::SIZES[c];
+        register int w = size & 0xF;
+        register int h = (size >> 4) & 0xF;
+        register int off = (size >> 8) & 0xF;
+        for (register int xx = w - 1; xx >= 0 ; xx--)    {
+            for (register int yy = h - 1; yy >= 0; yy--) {
+                if (((letter >> (yy * w + xx)) & 1) == 1)   {
+                    p[x + xx + ((y + yy + off) << 8)] = argb;
+                }
+            }
+        }
+        x += w + 1;
+    }
+}
+
+void Gui::error(char* msg)   {
+    MenuRenderer gui = [=] (int keys) -> GuiExitCode {
+        Gui::drawRect(8, 16, 8, 64, ARGB16(1, 0, 31, 31), TOP);
+        Gui::drawText(64, 64, ARGB16(1, 31, 31, 31), TOP, msg);
+        return NOTHING;
+    };
+    Gui::MENU_STACK.push_back(gui);
 }

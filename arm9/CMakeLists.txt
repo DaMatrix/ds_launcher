@@ -28,4 +28,5 @@ add_executable(template-arm9
         source/game.cpp include/game.h
         include/constants.h
         source/netutil.cpp include/netutil.h
-        source/gui.cpp include/gui.h)
+        source/gui.cpp include/gui.h
+        source/alphabet.cpp include/font.h)
