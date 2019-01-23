@@ -10,10 +10,7 @@
 static int frame = 0;
 static touchPosition touchXY;
 
-static u16* DISPLAY_TOP;
-static u16* DISPLAY_BOTTOM;
-
-#define ICON_SIZE 32 //the side length of a game icon
+//#define ICON_SIZE 32 //the side length of a game icon
 
 enum GuiState   {
     CONNECTING = 0,
@@ -31,14 +28,20 @@ enum Screen {
     BOTTOM = 1
 };
 
-typedef GuiExitCode (* Gui) (int keys);
-static std::vector<Gui> guiStack;
+struct Gui {
+    static u16* DISPLAY_TOP;
+    static u16* DISPLAY_BOTTOM;
+public:
+    static void drawRect(int x, int y, int w, int h, u16 argb, Screen screen);
+};
+
+typedef GuiExitCode (* MenuRenderer) (int keys);
+static std::vector<MenuRenderer> guiStack;
 
 GuiExitCode gui_loading(int keys);
 
-void error(char* msg);
+//void error(char* msg);
 
 //draw methods
-void drawRect(int x, int y, int w, int h, u16 argb, Screen screen);
 
 #endif //TEMPLATE_REFS_H

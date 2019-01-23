@@ -7,6 +7,6 @@
 #include <string>
 
 #include "netutil.h"
-#include "refs.h"
+#include "gui.h"
 
 #endif //ARM9_MAIN_H

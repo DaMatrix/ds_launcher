@@ -36,19 +36,15 @@ int main() {
         printf("Message: %s\n", e);
     }
 
-    powerOn(POWER_ALL);
-
-    videoSetMode(MODE_3_2D);
-    videoSetModeSub(MODE_3_2D);
-    DISPLAY_TOP = bgGetGfxPtr(bgInit(3, BgType_Bmp16, BgSize_B16_256x256, 0, 0));
-    DISPLAY_BOTTOM = bgGetGfxPtr(bgInitSub(3, BgType_Bmp16, BgSize_B16_256x256, 0, 0));
+    //DISPLAY_TOP = bgGetGfxPtr(bgInit(3, BgType_Bmp16, BgSize_B16_256x256, 0, 0));
+    //DISPLAY_BOTTOM = bgGetGfxPtr(bgInitSub(3, BgType_Bmp16, BgSize_B16_256x256, 0, 0));
     for (int x = SCREEN_WIDTH - 1; x >= 0; x--) {
         for (int y = SCREEN_HEIGHT - 1; y >= 0; y--)    {
-            DISPLAY_TOP[x + (y << 8)] = ARGB16(1, 31, 0, 0);
-            DISPLAY_BOTTOM[x + (y << 8)] = ARGB16(1, 0, 31, 0);
+            Gui::DISPLAY_TOP[x + (y << 8)] = ARGB16(1, 31, 0, 0);
+            Gui::DISPLAY_BOTTOM[x + (y << 8)] = ARGB16(1, 0, 31, 0);
         }
     }
-    drawRect(0, 0, 0, 0, 0, TOP);
+    Gui::drawRect(0, 0, 0, 0, 0, TOP);
 
     guiStack.push_back(gui_loading);
 
