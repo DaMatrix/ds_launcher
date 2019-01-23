@@ -1,9 +1,8 @@
 #ifndef ARM9_GAME_H
 #define ARM9_GAME_H
 
-#include <nds.h>
+#include "constants.h"
 
-#include <stdio.h>
 #include <string>
 #include <vector>
 

@@ -15,22 +15,26 @@ u16* getStuff(bool top) {
 
 u16* Gui::DISPLAY_TOP = getStuff(true);
 u16* Gui::DISPLAY_BOTTOM = getStuff(false);
+int Gui::CURRENT_FRAME = 0;
+touchPosition Gui::TOUCH_POS;
+std::vector<MenuRenderer> Gui::MENU_STACK;
 
 GuiExitCode gui_loading(int keys)  {
+    Gui::drawRect(16, 32, 16, 32, ARGB16(1, 0, 0, 31), TOP);
     //printf("\x1b[19;0HLoading %d      \n", keysHeld());
     return NOTHING;
 }
 
-//void error(char* msg)   {
-    /*MenuRenderer gui = [](int keys) -> GuiExitCode {
-        drawRect(8, 16, 8, 64, ARGB16(1, 0, 0, 31), TOP);
+void error(char* msg)   {
+    MenuRenderer gui = [=] (int keys) -> GuiExitCode {
+        Gui::drawRect(8, 16, 8, 64, ARGB16(1, 0, 31, 31), TOP);
         return NOTHING;
     };
-    guiStack.push_back(gui);*/
-//}
+    Gui::MENU_STACK.push_back(gui);
+}
 
 void Gui::drawRect(int x, int y, int w, int h, u16 argb, Screen screen)  {
-    /*if (x < 0)  {
+    if (x < 0)  {
         w += x;
         x = 0;
     }
@@ -42,16 +46,11 @@ void Gui::drawRect(int x, int y, int w, int h, u16 argb, Screen screen)  {
     h = min(h, SCREEN_HEIGHT - y);
     if (x >= SCREEN_WIDTH || y >= SCREEN_HEIGHT || w <= 0 || h <= 0)    {
         return;
-    }*/
-    //u16* p = screen == TOP ? DISPLAY_TOP : DISPLAY_BOTTOM;
-    /*do {
-        do {
-            p[x + w + ((y + h) << 8)] = argb;
-        } while (--h >= 0);
-    } while (--w >= 0);*/
-    for (int xx = 32; xx >= 0; xx--)    {
-        for (int yy = 32; yy >= 0; yy--)    {
-            Gui::DISPLAY_TOP[xx + 16 + ((yy + 16) << 8)] = ARGB16(1, 0, 0, 31);
+    }
+    register u16* p = screen == TOP ? DISPLAY_TOP : DISPLAY_BOTTOM;
+    for (register int xx = w - 1; xx >= 0; xx--) {
+        for (register int yy = h - 1; yy >= 0; yy--) {
+            p[x + xx + ((y + yy) << 8)] = argb;
         }
     }
 }

@@ -1,7 +1,9 @@
 #ifndef TEMPLATE_NETUTIL_H
 #define TEMPLATE_NETUTIL_H
 
-#include <nds.h>
+#include "constants.h"
+#include "game.h"
+
 #include <dswifi9.h>
 #include <fat.h>
 
@@ -11,7 +13,6 @@
 #include <netinet/in.h>
 #include <fcntl.h>
 
-#include "game.h"
 
 static bool wifiStarted = false;
 

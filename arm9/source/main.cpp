@@ -1,7 +1,7 @@
 #include "main.h"
 
 void vblank() {
-    frame++;
+    Gui::CURRENT_FRAME++;
 
     scanKeys();
     int keys = keysDown();
@@ -9,21 +9,17 @@ void vblank() {
         exit(0);
     }
 
-    touchRead(&touchXY);
+    touchRead(&Gui::TOUCH_POS);
 
     // print at using ansi escape sequence \x1b[line;columnH
-    printf("\x1b[10;0HFrame = %d", frame);
-    printf("\x1b[16;0HTouch x = %04X, %04X\n", touchXY.rawx, touchXY.px);
-    printf("Touch y = %04X, %04X\n", touchXY.rawy, touchXY.py);
+    printf("\x1b[10;0HFrame = %d", Gui::CURRENT_FRAME);
+    printf("\x1b[16;0HTouch x = %04X, %04X\n", Gui::TOUCH_POS.rawx, Gui::TOUCH_POS.px);
+    printf("Touch y = %04X, %04X\n", Gui::TOUCH_POS.rawy, Gui::TOUCH_POS.py);
 
-    GuiExitCode exitCode = guiStack.back()(keys);
+    GuiExitCode exitCode = Gui::MENU_STACK.back()(keys);
 }
 
 int main() {
-    irqSet(IRQ_VBLANK, vblank);
-
-    //consoleDemoInit();
-    //lcdSwap();
 
     try {
         printf("Testing errors\n");
@@ -36,19 +32,33 @@ int main() {
         printf("Message: %s\n", e);
     }
 
-    //DISPLAY_TOP = bgGetGfxPtr(bgInit(3, BgType_Bmp16, BgSize_B16_256x256, 0, 0));
-    //DISPLAY_BOTTOM = bgGetGfxPtr(bgInitSub(3, BgType_Bmp16, BgSize_B16_256x256, 0, 0));
     for (int x = SCREEN_WIDTH - 1; x >= 0; x--) {
         for (int y = SCREEN_HEIGHT - 1; y >= 0; y--)    {
             Gui::DISPLAY_TOP[x + (y << 8)] = ARGB16(1, 31, 0, 0);
             Gui::DISPLAY_BOTTOM[x + (y << 8)] = ARGB16(1, 0, 31, 0);
         }
     }
-    Gui::drawRect(0, 0, 0, 0, 0, TOP);
 
-    guiStack.push_back(gui_loading);
+    Gui::MENU_STACK.push_back(gui_loading);
+
+    irqSet(IRQ_VBLANK, vblank);
 
     while (true) {
         swiWaitForVBlank();
+        if (Gui::CURRENT_FRAME == 100)  {
+            error("test!");
+        }
     }
+}
+
+int min(int a, int b)   {
+    return a < b ? a : b;
+}
+
+int max(int a, int b)   {
+    return a > b ? a : b;
+}
+
+int clamp(int a, int min, int max)  {
+    return a < min ? min : a > max ? max : a;
 }

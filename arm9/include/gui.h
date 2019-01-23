@@ -3,12 +3,8 @@
 
 #include "constants.h"
 
-#include <nds.h>
 #include <vector>
-#include <stdio.h>
-
-static int frame = 0;
-static touchPosition touchXY;
+#include <functional>
 
 //#define ICON_SIZE 32 //the side length of a game icon
 
@@ -28,19 +24,22 @@ enum Screen {
     BOTTOM = 1
 };
 
+//typedef GuiExitCode (* MenuRenderer) (int keys);
+typedef std::function<GuiExitCode (int keys)> MenuRenderer;
+
 struct Gui {
     static u16* DISPLAY_TOP;
     static u16* DISPLAY_BOTTOM;
+    static int CURRENT_FRAME;
+    static touchPosition TOUCH_POS;
+    static std::vector<MenuRenderer> MENU_STACK;
 public:
     static void drawRect(int x, int y, int w, int h, u16 argb, Screen screen);
 };
 
-typedef GuiExitCode (* MenuRenderer) (int keys);
-static std::vector<MenuRenderer> guiStack;
-
 GuiExitCode gui_loading(int keys);
 
-//void error(char* msg);
+void error(char* msg);
 
 //draw methods
 
