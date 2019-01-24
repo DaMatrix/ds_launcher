@@ -53,17 +53,17 @@ void Gui::drawText(int x, int y, u16 argb, Screen screen, const char* text)   {
     register int c;
     register u16* p = screen == TOP ? DISPLAY_TOP : DISPLAY_BOTTOM;
     while ((c = (unsigned char) text[i++]))    {
-        register unsigned int letter = *(Font::LETTERS + c);
-        if (letter == 0)    {
+        register unsigned int size = Font::SIZES[c];
+        if (size == 0)    {
             continue;
         }
-        register unsigned int size = Font::SIZES[c];
+        register unsigned int letter = Font::LETTERS[c];
         register int w = size & 0xF;
         register int h = (size >> 4) & 0xF;
         register int off = (size >> 8) & 0xF;
         for (register int xx = w - 1; xx >= 0 ; xx--)    {
             for (register int yy = h - 1; yy >= 0; yy--) {
-                if (((letter >> (yy * w + xx)) & 1) == 1)   {
+                if (letter & (1 << (yy * w + xx)))   {
                     p[x + xx + ((y + yy + off) << 8)] = argb;
                 }
             }
@@ -74,8 +74,16 @@ void Gui::drawText(int x, int y, u16 argb, Screen screen, const char* text)   {
 
 void Gui::error(char* msg)   {
     MenuRenderer gui = [=] (int keys) -> GuiExitCode {
-        Gui::drawRect(8, 16, 8, 64, ARGB16(1, 0, 31, 31), TOP);
         Gui::drawText(64, 64, ARGB16(1, 31, 31, 31), TOP, msg);
+
+        if (true)   {
+            Gui::drawText(64, 64 + 10 * 1, ARGB16(1, 31, 31, 31), TOP, "0123456789ABCD");
+            Gui::drawText(64, 64 + 10 * 2, ARGB16(1, 31, 31, 31), TOP, "EFGHIJKLMNOPQR");
+            Gui::drawText(64, 64 + 10 * 3, ARGB16(1, 31, 31, 31), TOP, "STUVWXYZabcdef");
+            Gui::drawText(64, 64 + 10 * 4, ARGB16(1, 31, 31, 31), TOP, "ghijklmnopqrst");
+            Gui::drawText(64, 64 + 10 * 5, ARGB16(1, 31, 31, 31), TOP, "uvwxyz!?.,:;-_");
+            Gui::drawText(64, 64 + 10 * 6, ARGB16(1, 31, 31, 31), TOP, "()[]+\"*#%&$='");
+        }
         return NOTHING;
     };
     Gui::MENU_STACK.push_back(gui);

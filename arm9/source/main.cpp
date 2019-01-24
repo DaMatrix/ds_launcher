@@ -49,7 +49,7 @@ int main() {
     while (true) {
         swiWaitForVBlank();
         if (Gui::CURRENT_FRAME == 10)  {
-            Gui::error("Hello world! 123");
+            Gui::error("Hello World! 0123");
         }
     }
 }
