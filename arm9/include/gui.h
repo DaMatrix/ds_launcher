@@ -33,6 +33,7 @@ struct Gui {
     static int CURRENT_FRAME;
     static touchPosition TOUCH_POS;
     static std::vector<MenuRenderer> MENU_STACK;
+    static bool QUEUED_REDRAW;
 public:
     //draw methods
     static void drawRect(int x, int y, int w, int h, u16 argb, Screen screen);

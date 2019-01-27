@@ -18,6 +18,7 @@ u16* Gui::DISPLAY_BOTTOM = getStuff(false);
 int Gui::CURRENT_FRAME = 0;
 touchPosition Gui::TOUCH_POS;
 std::vector<MenuRenderer> Gui::MENU_STACK;
+bool Gui::QUEUED_REDRAW = true;
 
 GuiExitCode gui_loading(int keys)  {
     Gui::drawRect(16, 32, 16, 32, ARGB16(1, 0, 0, 31), TOP);
