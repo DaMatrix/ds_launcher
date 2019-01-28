@@ -6,6 +6,15 @@ void TCPSocket::open(const char *url, unsigned short port) {
     this->open(host, port);
 }
 
+size_t TCPSocket::receive(char *buffer, size_t size) {
+    size_t total = 0, n = 0;
+    while((n = recv(this->socketId, buffer + total, size - total - 1, 0)) > 0) {
+        total += n;
+    }
+    //buffer[total] = 0;
+    return total;
+}
+
 void TCPSocket::open(hostent *host, unsigned short port) {
     ensureWifiStarted();
     if (this->isConnected()) {
@@ -42,6 +51,50 @@ void TCPSocket::close() {
 
 bool TCPSocket::isConnected() {
     return this->socketId != -1 && isWifiConnected();
+}
+
+void TCPSocket::loadSimpleIconTest() {
+    if (false) {
+        char *pixels = new char[512];
+        char *paletteBuf = new char[16 * 3];
+
+        this->receive(paletteBuf, 16 * 3);
+        //this->receive(paletteA, 32);
+        this->receive(pixels, 512);
+
+        u16 *palette = new u16[16];
+        for (int i = 15; i >= 0; i--) {
+            palette[i] = (u16) ((paletteBuf[i * 3] << 10) | (paletteBuf[i * 3 + 1] << 5) | paletteBuf[i * 3 + 2] |
+                                ((paletteBuf[i * 3] & 0x80) ? 0x8000 : 0));
+        }
+
+        for (int x = 31; x >= 0; x--) {
+            for (int y = 31; y >= 0; y--) {
+                Gui::DISPLAY_TOP[x | (y << 8)] = palette[x & 0xF];
+
+                int tileX = x >> 3;
+                int tileY = y >> 3;
+                int b = pixels[(((tileY << 2) | tileX) << 5) | ((y & 0x7) << 2) | ((x >> 1) & 0x3)] & 0xFF;
+                Gui::DISPLAY_TOP[x | (y << 8)] = palette[(b >> ((x & 1) == 0 ? 0 : 4)) & 0xF];
+            }
+        }
+
+        delete pixels;
+        delete paletteBuf;
+        delete palette;
+    } else if (true)    {
+        char* pixels = new char[32 * 32 * 3];
+        this->receive(pixels, 32 * 32 * 3);
+
+        int i = 0;
+        for (int x = 31; x >= 0; x--) {
+            for (int y = 31; y >= 0; y--) {
+                Gui::DISPLAY_TOP[x | (y << 8)] = (u16) (((pixels[i] & 0x80) ? 0x8000 : 0) | (pixels[i++] << 10) | (pixels[i++] << 5) | pixels[i++]);
+            }
+        }
+
+        delete pixels;
+    }
 }
 
 void ensureWifiStarted() {

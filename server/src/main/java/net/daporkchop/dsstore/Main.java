@@ -1,6 +1,20 @@
 package net.daporkchop.dsstore;
 
+import io.netty.bootstrap.ServerBootstrap;
+import io.netty.buffer.ByteBuf;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelHandler;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInboundHandlerAdapter;
+import io.netty.channel.ChannelInitializer;
+import io.netty.channel.EventLoopGroup;
+import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.socket.SocketChannel;
+import io.netty.channel.socket.nio.NioServerSocketChannel;
 import net.daporkchop.lib.binary.stream.StreamUtil;
+import net.daporkchop.lib.common.util.PorkUtil;
+import net.daporkchop.lib.nds.RomNDS;
+import net.daporkchop.lib.nds.header.RomIcon;
 import sun.misc.IOUtils;
 
 import java.io.ByteArrayInputStream;
@@ -119,192 +133,57 @@ public class Main {
             return;
         }
 
-        ServerSocket server = new ServerSocket(8236);
-        new Thread(() -> {
-            Scanner s = new Scanner(System.in);
-            s.nextLine();
-            running.set(false);
-            s.close();
-            try {
-                server.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }).start();
+        EventLoopGroup group = new NioEventLoopGroup(Runtime.getRuntime().availableProcessors(), PorkUtil.DEFAULT_EXECUTOR);
+        ServerBootstrap bootstrap = new ServerBootstrap();
+        bootstrap.group(group, group);
+        bootstrap.channel(NioServerSocketChannel.class);
+        bootstrap.childHandler(new PHandler());
 
-        final Set<WriteThread> threads = Collections.synchronizedSet(new HashSet<>());
+        Channel channel = bootstrap.bind(8234).syncUninterruptibly().channel();
+        try (Scanner scanner = new Scanner(System.in))  {
+            scanner.nextLine();
+        }
+        channel.close().syncUninterruptibly();
+        group.shutdownGracefully();
+    }
 
-        new Thread(() -> {
-            Queue<WriteThread> toRemove = new ConcurrentLinkedQueue<>();
-            while (!server.isClosed()) {
-                long minTime = System.currentTimeMillis() - 20000L;
-                threads.forEach(t -> {
-                    if (t.lastWrite < minTime) {
-                        try {
-                            t.socket.close();
-                        } catch (IOException e) {
-                            e.printStackTrace();
+    @ChannelHandler.Sharable
+    protected static class PHandler extends ChannelInboundHandlerAdapter    {
+        @Override
+        public void channelRegistered(ChannelHandlerContext ctx) throws Exception {
+            System.out.printf("Incoming connection: %s\n", ctx.channel().remoteAddress());
+            try (RomNDS rom = new RomNDS(new File("/home/daporkchop/192.168.1.119/Torrents/ROMs/New Super Mario Bros.nds")))    {
+                RomIcon icon = rom.getHeaders().getIconTitle().getIcon();
+                ByteBuf buf = ctx.alloc().ioBuffer();
+                if (false) {
+                    for (short s : icon.getPalette()) {
+                        buf.writeByte(((s >>> 10) & 0x1F) | (s == 0 ? 0 : 0x80));
+                        buf.writeByte((s >>> 5) & 0x1F);
+                        buf.writeByte(s & 0x1F);
+                    }
+                    ctx.channel().writeAndFlush(buf);
+                    buf = ctx.alloc().ioBuffer();
+                    buf.writeBytes(icon.getPixels());
+                    ctx.channel().writeAndFlush(buf);
+                } else if (true)    {
+                    for (int x = 31; x >= 0; x--)   {
+                        for (int y = 31; y >= 0; y--)   {
+                            short s = icon.getColor(x, y);
+                            buf.writeByte(((s >>> 10) & 0x1F) | (s == 0 ? 0 : 0x80));
+                            buf.writeByte((s >>> 5) & 0x1F);
+                            buf.writeByte(s & 0x1F);
                         }
-                        t.interrupt();
-                        toRemove.add(t);
-                    } else if (!t.isAlive()) {
-                        toRemove.add(t);
                     }
-                });
-                toRemove.forEach(threads::remove);
-                toRemove.clear();
-                try {
-                    Thread.sleep(1000L);
-                } catch (InterruptedException e) {
+                    ctx.channel().writeAndFlush(buf);
                 }
+                //ctx.close();
             }
-        }).start();
-
-        new Thread(() -> {
-            do {
-                try {
-                    ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                    File[] files = ROOT_FOLDER.listFiles();
-                    String[] names = new String[files.length];
-                    for (int i = 0; i < files.length; i++)  {
-                        names[i] = files[i].getName();
-                    }
-                    Arrays.sort(names);
-                    baos.write(encodeHex(files.length));
-                    for (String s : names) {
-                        byte[] name = s.getBytes();
-                        baos.write(encodeHex(name.length));
-                        baos.write(name);
-                        baos.write(encodeHex(getVersion(s))); //version
-                    }
-                    FILE_LIST = baos.toByteArray();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-                for (int i = 0; i < 60 && !server.isClosed(); i++) {
-                    try {
-                        Thread.sleep(1000L);
-                    } catch (InterruptedException e) {
-                    }
-                }
-            } while (!server.isClosed());
-        }).start();
-
-        while (!server.isClosed()) {
-            try {
-                Socket socket = server.accept();
-                WriteThread thread = new WriteThread(socket);
-                thread.start();
-                threads.add(thread);
-            } catch (SocketException e) {
-                break;
-            }
-        }
-    }
-
-    public static byte[] encodeHex(int val) {
-        char[] letters = new char[8];
-        for (int i = 0; i < 8; i++) {
-            letters[i] = HEX[(val >> (i << 2)) & 0xF];
-        }
-        return new String(letters).getBytes();
-    }
-
-    public static int decodeHex(char[] in, int fromIndex) {
-        int val = 0;
-        for (int i = 0; i < 8; i++) {
-            char c = in[i + fromIndex];
-            for (int j = 0; j < 16; j++) {
-                if (HEX[j] == c) {
-                    val |= j << (i << 2);
-                    break;
-                }
-            }
-        }
-        return val;
-    }
-
-    public static int getVersion(String name) throws IOException {
-        File file = new File(INFO_FOLDER, name + ".info");
-        if (file.exists()) {
-            FileInputStream fis = new FileInputStream(file);
-            int localVersion = Integer.parseInt(new String(IOUtils.readFully(fis, -1, false)).trim());
-            fis.close();
-            return localVersion;
-        } else {
-            return DEFAULT_VERSION;
-        }
-    }
-
-    public static class WriteThread extends Thread {
-        public final Socket socket;
-        public volatile long lastWrite = System.currentTimeMillis();
-
-        public WriteThread(Socket socket) {
-            this.socket = socket;
+            super.channelRegistered(ctx);
         }
 
         @Override
-        public void run() {
-            try {
-                byte[] bytes = null;
-                InputStream data = null;
-                int len = -1;
-                final String path;
-                {
-                    byte[] hex = new byte[8];
-                    InputStream is = socket.getInputStream();
-                    StreamUtil.read(is, hex, 0, 8);
-                    System.out.println(new String(hex) + " (" + decodeHex(new String(hex).toCharArray(), 0) + ')');
-                    byte[] text = new byte[decodeHex(new String(hex).toCharArray(), 0)];
-                    StreamUtil.read(is, text, 0, text.length);
-                    path = new String(text);
-                }
-                System.out.println(path);
-                if (!path.startsWith("/")) {
-                    File file = new File(ROOT_FOLDER, path/*.replaceFirst("/download/", "")*/.replaceAll("~", " "));
-                    System.out.println(file.getAbsolutePath() + ' ' + file.exists());
-                    len = (int) file.length();
-                    data = new FileInputStream(file);
-                }
-                switch (path) {
-                    case "/index.txt":
-                        bytes = FILE_LIST;
-                        break;
-                }
-                if (len == -1L && bytes != null) {
-                    len = bytes.length;
-                }
-                if (data == null && bytes != null) {
-                    data = new ByteArrayInputStream(bytes);
-                    len = bytes.length;
-                }
-                OutputStream os = socket.getOutputStream();
-                {
-                    //start padding
-                    os.write(127);
-                    os.write(encodeHex(len));
-                }
-                byte[] buf = new byte[256];
-                while (true) {
-                    int read = data.read(buf);
-                    if (read == -1) {
-                        break;
-                    }
-                    os.write(buf, 0, read);
-                    lastWrite = System.currentTimeMillis();
-                }
-                data.close();
-                os.flush();
-            } catch (IOException e) {
-                e.printStackTrace();
-            } finally {
-                try {
-                    socket.close();
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            }
+        public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+            super.channelRead(ctx, msg);
         }
     }
 }

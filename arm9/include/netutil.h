@@ -3,6 +3,7 @@
 
 #include "constants.h"
 #include "game.h"
+#include "gui.h"
 
 #include <dswifi9.h>
 #include <fat.h>
@@ -22,8 +23,10 @@ private:
 public:
     void open(const char *url, uint16 port);
     void open(hostent *host, uint16 port);
+    size_t receive(char *buffer, size_t size);
     void startRequestIndex();
     void download(Game* entry);
+    void loadSimpleIconTest();
     void close();
     bool isConnected();
 };
