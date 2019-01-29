@@ -7,6 +7,7 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
+import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
@@ -21,6 +22,7 @@ import java.io.IOException;
 import java.util.Hashtable;
 import java.util.Map;
 import java.util.Scanner;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -123,6 +125,7 @@ public class Main {
         bootstrap.group(group, group);
         bootstrap.channel(NioServerSocketChannel.class);
         bootstrap.childHandler(new PHandler());
+        bootstrap.childOption(ChannelOption.SO_KEEPALIVE, true);
 
         Channel channel = bootstrap.bind(8234).syncUninterruptibly().channel();
         try (Scanner scanner = new Scanner(System.in)) {
@@ -139,11 +142,27 @@ public class Main {
         @Override
         public void channelRegistered(ChannelHandlerContext ctx) throws Exception {
             System.out.printf("Incoming connection: %s\n", ctx.channel().remoteAddress());
+
             super.channelRegistered(ctx);
         }
 
         @Override
+        public void channelUnregistered(ChannelHandlerContext ctx) throws Exception {
+            System.out.printf("Connection closed: %s\n", ctx.channel().remoteAddress());
+            super.channelUnregistered(ctx);
+        }
+
+        @Override
         public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+            if (true)   {
+                ByteBuf buf = ctx.alloc().ioBuffer();
+                for (int i = 0; i < 128; i++)   {
+                    buf.writeByte(ThreadLocalRandom.current().nextInt(256));
+                }
+                ctx.writeAndFlush(buf);
+                return;
+            }
+
             int id = ((ByteBuf) msg).readIntLE();
             System.out.printf("Sending content for ROM #%d\n", id);
             try (RomNDS rom = new RomNDS(this.roms[id])) {

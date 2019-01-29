@@ -53,44 +53,36 @@ bool TCPSocket::isConnected() {
     return this->socketId != -1 && isWifiConnected();
 }
 
-void TCPSocket::loadSimpleIconTest(int num) {
-    send(this->socketId, &num, 4, 0);
+void TCPSocket::loadSimpleIconTest() {
+    if (this->socketId == -1)   {
+        return;
+    }
 
-    for (int x = SCREEN_WIDTH - 1; x >= 0; x--) {
-        for (int y = SCREEN_HEIGHT - 1; y >= 0; y--) {
-            Gui::DISPLAY_TOP[x + (y << 8)] = ARGB16(1, 0, 0, 0);
-            Gui::DISPLAY_BOTTOM[x + (y << 8)] = ARGB16(1, 0, 0, 0);
+    int count = 128;
+    int size = 1;
+
+    send(this->socketId, &count, 1, 0);
+
+    char* c = new char[count * size];
+
+    Gui::drawText(5, 5, ARGB16(1, 31, 0, 0), BOTTOM, "Reading bytes...");
+    this->receive(c, count * size);
+
+    Gui::drawText(5, 15, ARGB16(1, 31, 0, 0), BOTTOM, "Clearing screen...");
+    for (int x = 255; x >= 0; x--)  {
+        for (int y = count - 1; y >= 0; y--)    {
+            Gui::DISPLAY_TOP[x | (y << 8)] = ARGB16(1, 0, 0, 0);
         }
     }
 
-    char *pixels = new char[32 * 32 * 3];
-
-    Gui::drawText(5, 5, ARGB16(1, 31, 0, 0), BOTTOM, "Receiving data...");
-    this->receive(pixels, 32 * 32 * 3);
-
-    char* text = new char[256];
-
-    Gui::drawText(5, 15, ARGB16(1, 31, 0, 0), BOTTOM, "Receiving text...");
-    this->receive(text, 256);
-
-    Gui::drawText(5, 25, ARGB16(1, 31, 0, 0), BOTTOM, "Drawing text...");
-    int i = 0;
-    i += Gui::drawText(5, 5, ARGB16(1, 31, 31, 31), BOTTOM, text);
-    i += Gui::drawText(5, 15, ARGB16(1, 31, 31, 31), BOTTOM, text + i);
-    i += Gui::drawText(5, 25, ARGB16(1, 31, 31, 31), BOTTOM, text + i);
-
-    Gui::drawText(5, 35, ARGB16(1, 31, 0, 0), BOTTOM, "Drawing icon...");
-    i = 0;
-    for (int x = 31; x >= 0; x--) {
-        for (int y = 31; y >= 0; y--) {
-            Gui::DISPLAY_TOP[x | (y << 8)] = (u16) (((pixels[i] & 0x80) ? 0x8000 : 0) | (pixels[i++] << 10) |
-                                                    (pixels[i++] << 5) | pixels[i++]);
-        }
+    Gui::drawText(5, 25, ARGB16(1, 31, 0, 0), BOTTOM, "Drawing bytes...");
+    for (int i = 0; i < 128; i++) {
+        char j = c[i];
+        Gui::DISPLAY_TOP[j | (i << 8)] = ARGB16(1, 31, 31, 31);
     }
 
-    Gui::drawText(5, 45, ARGB16(1, 31, 0, 0), BOTTOM, "Done!");
-    delete text;
-    delete pixels;
+    Gui::drawText(5, 35, ARGB16(1, 31, 0, 0), BOTTOM, "Done!");
+    delete c;
 }
 
 void ensureWifiStarted() {
