@@ -48,7 +48,7 @@ void Gui::drawRect(int x, int y, int w, int h, u16 argb, Screen screen)  {
     }
 }
 
-void Gui::drawText(int x, int y, u16 argb, Screen screen, const char* text)   {
+int Gui::drawText(int x, int y, u16 argb, Screen screen, const char* text)   {
     //i don't even know if register does anything on the nds or if i'm overusing it but hey why not
     register int i = 0;
     register int c;
@@ -71,13 +71,14 @@ void Gui::drawText(int x, int y, u16 argb, Screen screen, const char* text)   {
         }
         x += w + 1;
     }
+    return i;
 }
 
 void Gui::error(char* msg)   {
     MenuRenderer gui = [=] (int keys) -> GuiExitCode {
         Gui::drawText(64, 64, ARGB16(1, 31, 31, 31), TOP, msg);
 
-        if (true)   {
+        if (false)   {
             Gui::drawText(64, 64 + 10 * 1, ARGB16(1, 31, 31, 31), TOP, "0123456789ABCD");
             Gui::drawText(64, 64 + 10 * 2, ARGB16(1, 31, 31, 31), TOP, "EFGHIJKLMNOPQR");
             Gui::drawText(64, 64 + 10 * 3, ARGB16(1, 31, 31, 31), TOP, "STUVWXYZabcdef");

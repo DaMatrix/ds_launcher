@@ -26,7 +26,7 @@ public:
     size_t receive(char *buffer, size_t size);
     void startRequestIndex();
     void download(Game* entry);
-    void loadSimpleIconTest();
+    void loadSimpleIconTest(int num);
     void close();
     bool isConnected();
 };

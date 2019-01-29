@@ -1,5 +1,9 @@
 #include "main.h"
 
+static int counter = 0;
+static TCPSocket theSocket;
+static bool queuedSend = false;
+
 void vblank() {
     Gui::CURRENT_FRAME++;
 
@@ -15,7 +19,18 @@ void vblank() {
         }*/
 
         if (keys & KEY_START) {
+            theSocket.close();
             exit(0);
+        } else if (keys & KEY_L) {
+            if (queuedSend == false && counter > 0) {
+                    counter--;
+                    queuedSend = true;
+            }
+        } else if (keys & KEY_R) {
+            if (queuedSend == false) {
+                counter++;
+                queuedSend = true;
+            }
         }
 
         touchRead(&Gui::TOUCH_POS);
@@ -39,9 +54,8 @@ int main() {
     try {
         printf("Testing errors\n");
 
-        TCPSocket socket;
-        socket.open("192.168.1.108", 8234);
-        socket.loadSimpleIconTest();
+        theSocket.open("192.168.1.108", 8234);
+        theSocket.loadSimpleIconTest(0);
         printf("Error not thrown!\n");
     } catch (const char *e) {
         printf("Caught exception!\n");
@@ -54,20 +68,21 @@ int main() {
 
     while (true) {
         swiWaitForVBlank();
-        if (Gui::CURRENT_FRAME == 10)  {
-            Gui::error("Hello World! 0123");
+        if (queuedSend) {
+            theSocket.loadSimpleIconTest(counter);
+            queuedSend = false;
         }
     }
 }
 
-int min(int a, int b)   {
+int min(int a, int b) {
     return a < b ? a : b;
 }
 
-int max(int a, int b)   {
+int max(int a, int b) {
     return a > b ? a : b;
 }
 
-int clamp(int a, int min, int max)  {
+int clamp(int a, int min, int max) {
     return a < min ? min : a > max ? max : a;
 }

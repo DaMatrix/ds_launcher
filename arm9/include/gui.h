@@ -37,7 +37,7 @@ struct Gui {
 public:
     //draw methods
     static void drawRect(int x, int y, int w, int h, u16 argb, Screen screen);
-    static void drawText(int x, int y, u16 argb, Screen screen, const char* text);
+    static int drawText(int x, int y, u16 argb, Screen screen, const char* text);
 
     //helper methods
     static void error(char* msg);

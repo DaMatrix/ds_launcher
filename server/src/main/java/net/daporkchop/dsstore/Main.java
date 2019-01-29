@@ -2,40 +2,25 @@ package net.daporkchop.dsstore;
 
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
-import io.netty.channel.ChannelInitializer;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
-import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
-import net.daporkchop.lib.binary.stream.StreamUtil;
 import net.daporkchop.lib.common.util.PorkUtil;
 import net.daporkchop.lib.nds.RomNDS;
 import net.daporkchop.lib.nds.header.RomIcon;
-import sun.misc.IOUtils;
+import net.daporkchop.lib.nds.header.RomLanguage;
+import net.daporkchop.lib.nds.header.RomTitle;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.net.ServerSocket;
-import java.net.Socket;
-import java.net.SocketException;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Map;
-import java.util.Queue;
 import java.util.Scanner;
-import java.util.Set;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -140,7 +125,7 @@ public class Main {
         bootstrap.childHandler(new PHandler());
 
         Channel channel = bootstrap.bind(8234).syncUninterruptibly().channel();
-        try (Scanner scanner = new Scanner(System.in))  {
+        try (Scanner scanner = new Scanner(System.in)) {
             scanner.nextLine();
         }
         channel.close().syncUninterruptibly();
@@ -148,41 +133,42 @@ public class Main {
     }
 
     @ChannelHandler.Sharable
-    protected static class PHandler extends ChannelInboundHandlerAdapter    {
+    protected static class PHandler extends ChannelInboundHandlerAdapter {
+        protected final File[] roms = new File("/media/daporkchop/TooMuchStuff/Misc/ds").listFiles((file, name) -> name.endsWith(".nds"));
+
         @Override
         public void channelRegistered(ChannelHandlerContext ctx) throws Exception {
             System.out.printf("Incoming connection: %s\n", ctx.channel().remoteAddress());
-            try (RomNDS rom = new RomNDS(new File("/home/daporkchop/192.168.1.119/Torrents/ROMs/New Super Mario Bros.nds")))    {
-                RomIcon icon = rom.getHeaders().getIconTitle().getIcon();
-                ByteBuf buf = ctx.alloc().ioBuffer();
-                if (false) {
-                    for (short s : icon.getPalette()) {
-                        buf.writeByte(((s >>> 10) & 0x1F) | (s == 0 ? 0 : 0x80));
-                        buf.writeByte((s >>> 5) & 0x1F);
-                        buf.writeByte(s & 0x1F);
-                    }
-                    ctx.channel().writeAndFlush(buf);
-                    buf = ctx.alloc().ioBuffer();
-                    buf.writeBytes(icon.getPixels());
-                    ctx.channel().writeAndFlush(buf);
-                } else if (true)    {
-                    for (int x = 31; x >= 0; x--)   {
-                        for (int y = 31; y >= 0; y--)   {
-                            short s = icon.getColor(x, y);
-                            buf.writeByte(((s >>> 10) & 0x1F) | (s == 0 ? 0 : 0x80));
-                            buf.writeByte((s >>> 5) & 0x1F);
-                            buf.writeByte(s & 0x1F);
-                        }
-                    }
-                    ctx.channel().writeAndFlush(buf);
-                }
-                //ctx.close();
-            }
             super.channelRegistered(ctx);
         }
 
         @Override
         public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+            int id = ((ByteBuf) msg).readIntLE();
+            System.out.printf("Sending content for ROM #%d\n", id);
+            try (RomNDS rom = new RomNDS(this.roms[id])) {
+                RomIcon icon = rom.getHeaders().getIconTitle().getIcon();
+                RomTitle title = rom.getHeaders().getIconTitle().getTitle(RomLanguage.ENGLISH);
+                ByteBuf buf = ctx.alloc().ioBuffer();
+                for (int x = 31; x >= 0; x--) {
+                    for (int y = 31; y >= 0; y--) {
+                        short s = icon.getColor(x, y);
+                        buf.writeByte(((s >>> 10) & 0x1F) | (s == 0 ? 0 : 0x80));
+                        buf.writeByte((s >>> 5) & 0x1F);
+                        buf.writeByte(s & 0x1F);
+                    }
+                }
+                ctx.channel().write(buf);
+                byte[] b = new byte[256];
+                buf = Unpooled.wrappedBuffer(b).writerIndex(0);
+                byte[] bytesTitle = title.getTitle().getBytes();
+                byte[] bytesSubtitle = title.getSubtitle().getBytes();
+                byte[] bytesManufacturer = title.getManufacturer().getBytes();
+                buf.writeBytes(bytesTitle).writeByte(0);
+                buf.writeBytes(bytesSubtitle).writeByte(0);
+                buf.writeBytes(bytesManufacturer).writeByte(0);
+                ctx.channel().writeAndFlush(Unpooled.wrappedBuffer(b));
+            }
             super.channelRead(ctx, msg);
         }
     }
