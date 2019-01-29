@@ -3,7 +3,7 @@
 Socket Socket::INSTANCE;
 
 Message::~Message() {
-    if (this->data != nullptr) {
+    if (this->data != nullptr && !this->isConst) {
         delete this->data;
     }
 }
@@ -114,23 +114,24 @@ Message *Socket::sendAndWaitForResponse(Message *message) {
     return response;
 }
 
-void Socket::sendWithoutWaiting(Message *message) {
+Message* Socket::sendWithoutWaiting(Message *message) {
     if (message->hasContent() > 0) {
         int total = message->len + 4 + 1 + 1;
         char* temp = new char[total];
         temp[0] = message->id;
-        ((int*) (temp + 1))[0] = message->len;
+        memcpy(temp + 1, &message->len, 4);
         memcpy(temp + 5, message->data, message->len);
         temp[total - 1] = 0;
-        send(this->socketId, message->data, message->len, 0);
+        send(this->socketId, temp, total, 0);
         delete temp;
     } else {
-        char* temp = new char[2];
+        char* temp = new char[6];
         temp[0] = message->id;
-        temp[1] = 0;
-        send(this->socketId, temp, 2, 0);
+        temp[1] = temp[2] = temp[3] = temp[4] = temp[5] = 0;
+        send(this->socketId, temp, 6, 0);
         delete temp;
     }
+    return message;
 }
 
 void ensureWifiStarted() {

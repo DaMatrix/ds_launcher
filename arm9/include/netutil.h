@@ -21,11 +21,27 @@ public:
     unsigned char id;
     char* data;
     int len;
+    bool isConst;
 
     Message(unsigned char id, char* data, int len)  {
         this->id = id;
         this->data = data;
         this->len = len;
+        this->isConst = false;
+    }
+
+    Message(unsigned char id, const char* data)  {
+        this->id = id;
+        this->data = (char*) data;
+        this->len = strlen(data);
+        this->isConst = true;
+    }
+
+    Message(unsigned char id, char* data)  {
+        this->id = id;
+        this->data = data;
+        this->len = strlen(data);
+        this->isConst = false;
     }
 
     virtual ~Message();
@@ -72,8 +88,9 @@ public:
     /**
      * Sends a request without waiting for a response
      * @param message the request to send
+     * @return the message that was sent
      */
-    void sendWithoutWaiting(Message* message);
+    Message* sendWithoutWaiting(Message* message);
 
     /**
      * Closes this socket

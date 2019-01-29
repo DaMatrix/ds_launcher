@@ -2,7 +2,6 @@ package net.daporkchop.dsstore;
 
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
@@ -13,10 +12,6 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import lombok.NonNull;
 import net.daporkchop.lib.common.util.PorkUtil;
-import net.daporkchop.lib.nds.RomNDS;
-import net.daporkchop.lib.nds.header.RomIcon;
-import net.daporkchop.lib.nds.header.RomLanguage;
-import net.daporkchop.lib.nds.header.RomTitle;
 
 import java.io.File;
 import java.io.IOException;
@@ -28,10 +23,8 @@ import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Map;
 import java.util.Scanner;
-import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
-import java.util.function.Consumer;
 
 /**
  * @author DaPorkchop_
@@ -43,6 +36,9 @@ public class Main {
     private static final File INFO_FOLDER = new File(".", "info");
     private static byte[] FILE_LIST;
     private static final int DEFAULT_VERSION = 4;
+    @SuppressWarnings("unchecked")
+    public static BiConsumer<Channel, ByteBuf>[] HANDLERS = (BiConsumer<Channel, ByteBuf>[]) new BiConsumer[256];
+    public static Collection<Channel> CHANNELS = Collections.synchronizedCollection(new HashSet<>());
 
     static {
         if (!ROOT_FOLDER.exists()) {
@@ -147,7 +143,7 @@ public class Main {
                         setHandlers();
                     }
                     break;
-                    case "kick":    {
+                    case "kick": {
                         CHANNELS.forEach(Channel::close);
                     }
                     break;
@@ -162,38 +158,34 @@ public class Main {
         group.shutdownGracefully();
     }
 
-    @SuppressWarnings("unchecked")
-    public static BiConsumer<Channel, ByteBuf>[] HANDLERS = (BiConsumer<Channel, ByteBuf>[]) new BiConsumer[256];
-
     protected static void setHandlers() {
         Arrays.fill(HANDLERS, null);
 
-        HANDLERS[0] = (ch, buf) -> {
+        HANDLERS[127] = (ch, buf) -> {
             System.out.printf("Closing connection %s...\n", ch.remoteAddress());
             ch.close();
         };
         HANDLERS[1] = (ch, buf) -> {
-            int i = buf.readerIndex();
-            int size = 0;
-            while (buf.readByte() != 0) {
-                size++;
-            }
-            System.out.printf("Received printable message from %s:\n%s\n", ch.remoteAddress(), buf.toString(i, size, Charset.forName("ASCII")));
+            System.out.printf("Received printable message from %s:\n%s\n", ch.remoteAddress(), buf.toString(Charset.forName("ASCII")));
         };
         HANDLERS[2] = (ch, buf) -> {
             System.out.printf("Sending some placeholder data back to %s...\n", ch.remoteAddress());
-            ch.writeAndFlush(ch.alloc().ioBuffer().writeByte(1)//.writeByte(0)
-                    .writeIntLE(12)//.writeByte(0)
-                    .writeBytes("Hello World!".getBytes(Charset.forName("ASCII"))).writeByte(0));
+            send(ch, 1, "Hello World!".getBytes(Charset.forName("ASCII")));
+            //ch.writeAndFlush(ch.alloc().ioBuffer().writeByte(1)//.writeByte(0)
+            //        .writeIntLE(12)//.writeByte(0)
+            //        .writeBytes("Hello World!".getBytes(Charset.forName("ASCII"))).writeByte(0));
             //ch.close();
         };
     }
 
-    public static void send(@NonNull Channel channel, @NonNull byte[] buf)  {
-
+    public static void send(@NonNull Channel channel, int id, @NonNull byte[] data) {
+        channel.writeAndFlush(
+                channel.alloc().ioBuffer()
+                        .writeByte(id)
+                        .writeIntLE(data.length)
+                        .writeBytes(data).writeByte(0)
+        );
     }
-
-    public static Collection<Channel> CHANNELS = Collections.synchronizedCollection(new HashSet<>());
 
     @ChannelHandler.Sharable
     protected static class PHandler extends ChannelInboundHandlerAdapter {
@@ -215,8 +207,8 @@ public class Main {
 
         @Override
         public void channelInactive(ChannelHandlerContext ctx) throws Exception {
-            System.out.printf("Closing channel %s for inactivity...\n", ctx.channel().remoteAddress());
-            ctx.close();
+            //System.out.printf("Closing channel %s for inactivity...\n", ctx.channel().remoteAddress());
+            //ctx.close();
             super.channelInactive(ctx);
         }
 
@@ -224,53 +216,24 @@ public class Main {
         public void channelRead(ChannelHandlerContext ctx, Object o) throws Exception {
             ByteBuf msg = (ByteBuf) o;
 
-            int id = msg.readByte() & 0xFF;
-            BiConsumer<Channel, ByteBuf> handler = HANDLERS[id];
-            System.out.println(msg);
-            if (handler == null) {
-                System.err.printf("Received unknown packet id %d from %s!\n", id, ctx.channel().remoteAddress());
-                ctx.close();
-            } else {
-                handler.accept(ctx.channel(), msg);
+            while (msg.isReadable()) {
+                System.out.println(msg);
+                int id = msg.readByte() & 0xFF;
+                if (id == 0)    {
+                    continue;
+                }
+                BiConsumer<Channel, ByteBuf> handler = HANDLERS[id];
+                if (handler == null) {
+                    System.err.printf("Received unknown packet id %d from %s!\n", id, ctx.channel().remoteAddress());
+                    ctx.close();
+                    return;
+                } else {
+                    int len = msg.readIntLE();
+                    handler.accept(ctx.channel(), msg.slice(msg.readerIndex(), len));
+                    msg.skipBytes(len + 1);
+                }
             }
 
-            /*if (false)   {
-                int count = 300;
-                ByteBuf buf = ctx.alloc().ioBuffer();
-                buf.writeByte(count & 0xFF);
-                buf.writeByte((count >>> 8) & 0xFF);
-                for (int i = 0; i < count; i++)   {
-                    buf.writeByte(ThreadLocalRandom.current().nextInt(256));
-                }
-                ctx.writeAndFlush(buf);
-                return;
-            }
-
-            int id = ((ByteBuf) msg).readIntLE();
-            System.out.printf("Sending content for ROM #%d\n", id);
-            try (RomNDS rom = new RomNDS(this.roms[id])) {
-                RomIcon icon = rom.getHeaders().getIconTitle().getIcon();
-                RomTitle title = rom.getHeaders().getIconTitle().getTitle(RomLanguage.ENGLISH);
-                ByteBuf buf = ctx.alloc().ioBuffer();
-                for (int x = 31; x >= 0; x--) {
-                    for (int y = 31; y >= 0; y--) {
-                        short s = icon.getColor(x, y);
-                        buf.writeByte(((s >>> 10) & 0x1F) | (s == 0 ? 0 : 0x80));
-                        buf.writeByte((s >>> 5) & 0x1F);
-                        buf.writeByte(s & 0x1F);
-                    }
-                }
-                ctx.channel().write(buf);
-                byte[] b = new byte[256];
-                buf = Unpooled.wrappedBuffer(b).writerIndex(0);
-                byte[] bytesTitle = title.getTitle().getBytes();
-                byte[] bytesSubtitle = title.getSubtitle().getBytes();
-                byte[] bytesManufacturer = title.getManufacturer().getBytes();
-                buf.writeBytes(bytesTitle).writeByte(0);
-                buf.writeBytes(bytesSubtitle).writeByte(0);
-                buf.writeBytes(bytesManufacturer).writeByte(0);
-                ctx.channel().writeAndFlush(Unpooled.wrappedBuffer(b));
-            }*/
             super.channelRead(ctx, msg);
         }
     }

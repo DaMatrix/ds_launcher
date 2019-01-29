@@ -32,7 +32,7 @@ int main() {
 
         irqSet(IRQ_VBLANK, vblank);
 
-        //char* value = Socket::INSTANCE.sendAndWaitForResponse({1, "hello world", 12});
+        delete Socket::INSTANCE.sendWithoutWaiting(new Message(1, "Hello from client!"));
         delete Socket::INSTANCE.sendAndWaitForResponse(new Message(2, nullptr, 0));
 
         Console::TOP->print("Waiting...");
