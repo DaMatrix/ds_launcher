@@ -20,6 +20,9 @@ touchPosition Gui::TOUCH_POS;
 std::vector<MenuRenderer> Gui::MENU_STACK;
 bool Gui::QUEUED_REDRAW = true;
 
+Console* Console::TOP = new Console(Screen::TOP);
+Console* Console::BOTTOM = new Console(Screen::BOTTOM);
+
 GuiExitCode gui_loading(int keys)  {
     Gui::drawRect(16, 32, 16, 32, ARGB16(1, 0, 0, 31), TOP);
     //printf("\x1b[19;0HLoading %d      \n", keysHeld());
@@ -79,6 +82,17 @@ int Gui::drawText(int x, int y, u16 argb, Screen screen, const char* text)   {
     return i;
 }
 
+void Gui::clear() {
+    for (int x = SCREEN_WIDTH - 1; x >= 0; x--) {
+        for (int y = SCREEN_HEIGHT - 1; y >= 0; y--)    {
+            int i = x | (y << 8);
+            Gui::DISPLAY_TOP[i] = 0;
+            Gui::DISPLAY_BOTTOM[i] = 0;
+        }
+    }
+    Console::TOP->row = Console::BOTTOM->row = 0;
+}
+
 void Gui::error(char* msg)   {
     MenuRenderer gui = [=] (int keys) -> GuiExitCode {
         Gui::drawText(64, 64, ARGB16(1, 31, 31, 31), TOP, msg);
@@ -94,4 +108,46 @@ void Gui::error(char* msg)   {
         return NOTHING;
     };
     Gui::MENU_STACK.push_back(gui);
+}
+
+void Console::print(int x, int y, char *text) {
+    Gui::drawText(x, y, ARGB16(1, 31, 31, 31), this->screen, text);
+}
+
+void Console::dprint(int x, int y, char *text) {
+    this->print(x, y, text);
+    delete text;
+}
+
+void Console::printf(int x, int y, char *text, ...) {
+    va_list v1;
+    va_start(v1, text);
+    size_t size = vsnprintf(nullptr, 0, text, v1) + 1;
+    char *result = new char[size];
+    vsnprintf(result, size, text, v1);
+    this->dprint(x, y, result);
+}
+
+void Console::dprintf(int x, int y, char *text, ...) {
+    va_list v1;
+    va_start(v1, text);
+    size_t size = vsnprintf(nullptr, 0, text, v1) + 1;
+    char *result = new char[size];
+    vsnprintf(result, size, text, v1);
+    this->dprint(x, y, result);
+    delete text;
+}
+
+void Console::print(char *text) {
+    this->print(5, (this->row++) * 10 + 5, text);
+}
+
+void Console::printf(char *text, ...) {
+    va_list v1;
+    va_start(v1, text);
+    size_t size = vsnprintf(nullptr, 0, text, v1) + 1;
+    char *result = new char[size];
+    vsnprintf(result, size, text, v1);
+    this->print(5, (this->row++) * 10 + 5, result);
+    delete result;
 }

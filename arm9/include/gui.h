@@ -39,10 +39,33 @@ public:
     static void drawRect(int x, int y, int w, int h, u16 argb, Screen screen);
     static int drawText(int x, int y, u16 argb, Screen screen, const char* text);
 
+    static void clear();
+
     //helper methods
     static void error(char* msg);
 };
 
 GuiExitCode gui_loading(int keys);
+
+class Console {
+public:
+    static Console* TOP;
+    static Console* BOTTOM;
+
+    //fields
+    Screen screen;
+    int row = 0;
+
+    Console(Screen screen)  {
+        this->screen = screen;
+    }
+
+    void printf(int x, int y, char* text, ...);
+    void print(int x, int y, char* text);
+    void printf(char* text, ...);
+    void print(char* text);
+    void dprintf(int x, int y, char* text, ...);
+    void dprint(int x, int y, char* text);
+};
 
 #endif //TEMPLATE_REFS_H

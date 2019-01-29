@@ -67,13 +67,13 @@ public:
      * @param message the request to send
      * @return the response from the server
      */
-    Message sendAndWaitForResponse(Message message);
+    Message* sendAndWaitForResponse(Message* message);
 
     /**
      * Sends a request without waiting for a response
      * @param message the request to send
      */
-    void sendWithoutWaiting(Message message);
+    void sendWithoutWaiting(Message* message);
 
     /**
      * Closes this socket

@@ -11,6 +11,7 @@ import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
+import lombok.NonNull;
 import net.daporkchop.lib.common.util.PorkUtil;
 import net.daporkchop.lib.nds.RomNDS;
 import net.daporkchop.lib.nds.header.RomIcon;
@@ -21,6 +22,9 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Map;
 import java.util.Scanner;
@@ -143,6 +147,10 @@ public class Main {
                         setHandlers();
                     }
                     break;
+                    case "kick":    {
+                        CHANNELS.forEach(Channel::close);
+                    }
+                    break;
                     default: {
                         System.out.println("Exiting...");
                         break LOOP;
@@ -174,10 +182,18 @@ public class Main {
         };
         HANDLERS[2] = (ch, buf) -> {
             System.out.printf("Sending some placeholder data back to %s...\n", ch.remoteAddress());
-            ch.writeAndFlush(ch.alloc().ioBuffer().writeByte(1).writeIntLE(13).writeBytes("Hello World!".getBytes(Charset.forName("ASCII"))));
+            ch.writeAndFlush(ch.alloc().ioBuffer().writeByte(1)//.writeByte(0)
+                    .writeIntLE(12)//.writeByte(0)
+                    .writeBytes("Hello World!".getBytes(Charset.forName("ASCII"))).writeByte(0));
             //ch.close();
         };
     }
+
+    public static void send(@NonNull Channel channel, @NonNull byte[] buf)  {
+
+    }
+
+    public static Collection<Channel> CHANNELS = Collections.synchronizedCollection(new HashSet<>());
 
     @ChannelHandler.Sharable
     protected static class PHandler extends ChannelInboundHandlerAdapter {
@@ -186,12 +202,14 @@ public class Main {
         @Override
         public void channelRegistered(ChannelHandlerContext ctx) throws Exception {
             System.out.printf("Incoming connection: %s\n", ctx.channel().remoteAddress());
+            CHANNELS.add(ctx.channel());
             super.channelRegistered(ctx);
         }
 
         @Override
         public void channelUnregistered(ChannelHandlerContext ctx) throws Exception {
             System.out.printf("Connection %s closed!\n", ctx.channel().remoteAddress());
+            CHANNELS.remove(ctx.channel());
             super.channelUnregistered(ctx);
         }
 
@@ -208,6 +226,7 @@ public class Main {
 
             int id = msg.readByte() & 0xFF;
             BiConsumer<Channel, ByteBuf> handler = HANDLERS[id];
+            System.out.println(msg);
             if (handler == null) {
                 System.err.printf("Received unknown packet id %d from %s!\n", id, ctx.channel().remoteAddress());
                 ctx.close();

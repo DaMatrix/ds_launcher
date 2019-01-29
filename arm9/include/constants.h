@@ -3,6 +3,7 @@
 
 #include <nds.h>
 
+#include <cstdarg>
 #include <stdio.h>
 
 const unsigned short SERVER_PORT = 8236;
@@ -13,9 +14,5 @@ int max(int a, int b);
 int clamp(int a, int min, int max);
 
 char* format(char* format, ...);
-
-class Console {
-    static Console INSTANCE;
-};
 
 #endif //TEMPLATE_CONSTANTS_H
