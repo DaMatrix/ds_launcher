@@ -19,11 +19,15 @@ import net.daporkchop.lib.nds.header.RomTitle;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.charset.Charset;
+import java.util.Arrays;
 import java.util.Hashtable;
 import java.util.Map;
 import java.util.Scanner;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 
 /**
  * @author DaPorkchop_
@@ -125,14 +129,54 @@ public class Main {
         bootstrap.group(group, group);
         bootstrap.channel(NioServerSocketChannel.class);
         bootstrap.childHandler(new PHandler());
+        bootstrap.option(ChannelOption.SO_BACKLOG, 256);
         bootstrap.childOption(ChannelOption.SO_KEEPALIVE, true);
 
+        setHandlers();
         Channel channel = bootstrap.bind(8234).syncUninterruptibly().channel();
         try (Scanner scanner = new Scanner(System.in)) {
-            scanner.nextLine();
+            LOOP:
+            while (true) {
+                switch (scanner.nextLine().trim()) {
+                    case "reload": {
+                        System.out.println("Reloading handlers...");
+                        setHandlers();
+                    }
+                    break;
+                    default: {
+                        System.out.println("Exiting...");
+                        break LOOP;
+                    }
+                }
+            }
         }
         channel.close().syncUninterruptibly();
         group.shutdownGracefully();
+    }
+
+    @SuppressWarnings("unchecked")
+    public static BiConsumer<Channel, ByteBuf>[] HANDLERS = (BiConsumer<Channel, ByteBuf>[]) new BiConsumer[256];
+
+    protected static void setHandlers() {
+        Arrays.fill(HANDLERS, null);
+
+        HANDLERS[0] = (ch, buf) -> {
+            System.out.printf("Closing connection %s...\n", ch.remoteAddress());
+            ch.close();
+        };
+        HANDLERS[1] = (ch, buf) -> {
+            int i = buf.readerIndex();
+            int size = 0;
+            while (buf.readByte() != 0) {
+                size++;
+            }
+            System.out.printf("Received printable message from %s:\n%s\n", ch.remoteAddress(), buf.toString(i, size, Charset.forName("ASCII")));
+        };
+        HANDLERS[2] = (ch, buf) -> {
+            System.out.printf("Sending some placeholder data back to %s...\n", ch.remoteAddress());
+            ch.writeAndFlush(ch.alloc().ioBuffer().writeByte(1).writeIntLE(13).writeBytes("Hello World!".getBytes(Charset.forName("ASCII"))));
+            //ch.close();
+        };
     }
 
     @ChannelHandler.Sharable
@@ -142,21 +186,41 @@ public class Main {
         @Override
         public void channelRegistered(ChannelHandlerContext ctx) throws Exception {
             System.out.printf("Incoming connection: %s\n", ctx.channel().remoteAddress());
-
             super.channelRegistered(ctx);
         }
 
         @Override
         public void channelUnregistered(ChannelHandlerContext ctx) throws Exception {
-            System.out.printf("Connection closed: %s\n", ctx.channel().remoteAddress());
+            System.out.printf("Connection %s closed!\n", ctx.channel().remoteAddress());
             super.channelUnregistered(ctx);
         }
 
         @Override
-        public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
-            if (true)   {
+        public void channelInactive(ChannelHandlerContext ctx) throws Exception {
+            System.out.printf("Closing channel %s for inactivity...\n", ctx.channel().remoteAddress());
+            ctx.close();
+            super.channelInactive(ctx);
+        }
+
+        @Override
+        public void channelRead(ChannelHandlerContext ctx, Object o) throws Exception {
+            ByteBuf msg = (ByteBuf) o;
+
+            int id = msg.readByte() & 0xFF;
+            BiConsumer<Channel, ByteBuf> handler = HANDLERS[id];
+            if (handler == null) {
+                System.err.printf("Received unknown packet id %d from %s!\n", id, ctx.channel().remoteAddress());
+                ctx.close();
+            } else {
+                handler.accept(ctx.channel(), msg);
+            }
+
+            /*if (false)   {
+                int count = 300;
                 ByteBuf buf = ctx.alloc().ioBuffer();
-                for (int i = 0; i < 128; i++)   {
+                buf.writeByte(count & 0xFF);
+                buf.writeByte((count >>> 8) & 0xFF);
+                for (int i = 0; i < count; i++)   {
                     buf.writeByte(ThreadLocalRandom.current().nextInt(256));
                 }
                 ctx.writeAndFlush(buf);
@@ -187,7 +251,7 @@ public class Main {
                 buf.writeBytes(bytesSubtitle).writeByte(0);
                 buf.writeBytes(bytesManufacturer).writeByte(0);
                 ctx.channel().writeAndFlush(Unpooled.wrappedBuffer(b));
-            }
+            }*/
             super.channelRead(ctx, msg);
         }
     }

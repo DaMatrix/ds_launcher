@@ -1,12 +1,24 @@
 #include "netutil.h"
 
-void TCPSocket::open(const char *url, unsigned short port) {
+Socket Socket::INSTANCE;
+
+Message::~Message() {
+    if (this->data != nullptr) {
+        delete this->data;
+    }
+}
+
+bool Message::hasContent() {
+    return this->data != nullptr && this->len > 0;
+}
+
+void Socket::open(const char *url, unsigned short port) {
     ensureWifiStarted();
     hostent *host = gethostbyname(url);
     this->open(host, port);
 }
 
-size_t TCPSocket::receive(char *buffer, size_t size) {
+size_t Socket::receive(char *buffer, size_t size) {
     size_t total = 0, n = 0;
     while ((n = recv(this->socketId, buffer + total, size - total - 1, 0)) > 0) {
         total += n;
@@ -15,7 +27,7 @@ size_t TCPSocket::receive(char *buffer, size_t size) {
     return total;
 }
 
-void TCPSocket::open(hostent *host, unsigned short port) {
+void Socket::open(hostent *host, unsigned short port) {
     ensureWifiStarted();
     if (this->isConnected()) {
         throw "Already connected!";
@@ -42,47 +54,66 @@ void TCPSocket::open(hostent *host, unsigned short port) {
     }
 }
 
-void TCPSocket::close() {
+void Socket::close() {
     if (this->socketId != -1) {
         closesocket(this->socketId);
         this->socketId = -1;
     }
 }
 
-bool TCPSocket::isConnected() {
+bool Socket::isConnected() {
     return this->socketId != -1 && isWifiConnected();
 }
 
-void TCPSocket::loadSimpleIconTest() {
-    if (this->socketId == -1)   {
-        return;
+Message Socket::sendAndWaitForResponse(Message message) {
+    /*char* text = format("A number: %d", 12345);
+    Gui::drawText(5, 5, ARGB16(1, 31, 0, 0), BOTTOM, text);
+    delete text;
+    text = format("%d jef %.2f %s", 12345, 3.146, "\"Hello World!\"");
+    Gui::drawText(5, 15, ARGB16(1, 31, 0, 0), BOTTOM, text);
+    delete text;*/
+
+    this->sendWithoutWaiting(message);
+
+    unsigned char id;
+    this->receive((char*) &id, 1);
+
+    int length;
+    this->receive((char*) &length, 4);
+
+    if (true) {
+        char *text = format("Response ID: %d\nResponse length: %d", id, length);
+        Gui::drawText(5, 5, ARGB16(1, 0, 31, 0), TOP, text);
+        delete text;
     }
 
-    int count = 128;
-    int size = 1;
+    char *data = nullptr;
+    if (false && length > 0) {
+        data = new char[length];
+        this->receive(data, length);
+    }
+    Message response = {id, data, length};
+    /*int length = 0;
+    this->receive((char *) &length, 4);
 
-    send(this->socketId, &count, 1, 0);
+    char *text = format("Content length: %d", length);
+    Gui::drawText(5, 5, ARGB16(1, 31, 0, 0), BOTTOM, text);
+    delete text;*/
 
-    char* c = new char[count * size];
-
-    Gui::drawText(5, 5, ARGB16(1, 31, 0, 0), BOTTOM, "Reading bytes...");
-    this->receive(c, count * size);
-
-    Gui::drawText(5, 15, ARGB16(1, 31, 0, 0), BOTTOM, "Clearing screen...");
-    for (int x = 255; x >= 0; x--)  {
-        for (int y = count - 1; y >= 0; y--)    {
-            Gui::DISPLAY_TOP[x | (y << 8)] = ARGB16(1, 0, 0, 0);
-        }
+    if (true) {
+        char *text = format("Response ID: %d\nResponse length: %d\nResponse data: %s", response.id, response.len, "null");//response.data == nullptr ? "null" : response.data);
+        Gui::drawText(5, 5, ARGB16(1, 31, 0, 0), BOTTOM, text);
+        delete text;
     }
 
-    Gui::drawText(5, 25, ARGB16(1, 31, 0, 0), BOTTOM, "Drawing bytes...");
-    for (int i = 0; i < 128; i++) {
-        char j = c[i];
-        Gui::DISPLAY_TOP[j | (i << 8)] = ARGB16(1, 31, 31, 31);
-    }
+    return response;
+}
 
-    Gui::drawText(5, 35, ARGB16(1, 31, 0, 0), BOTTOM, "Done!");
-    delete c;
+void Socket::sendWithoutWaiting(Message message) {
+    send(this->socketId, &message.id, 1, 0);
+    if (message.data != nullptr && message.len > 0) {
+        send(this->socketId, message.data, message.len, 0);
+    }
 }
 
 void ensureWifiStarted() {

@@ -14,20 +14,76 @@
 #include <netinet/in.h>
 #include <fcntl.h>
 
-
 static bool wifiStarted = false;
 
-class TCPSocket {
+class Message {
+public:
+    unsigned char id;
+    char* data;
+    int len;
+
+    Message(unsigned char id, char* data, int len)  {
+        this->id = id;
+        this->data = data;
+        this->len = len;
+    }
+
+    virtual ~Message();
+    bool hasContent();
+};
+
+class Socket {
 private:
     int socketId = -1;
 public:
+    //static instance of socket that's used for communicating with the ds-store server
+    static Socket INSTANCE;
+
+    //functions
+    /**
+     * Connects to a remote host
+     * @param url  the address of the host to connect to
+     * @param port the port to connect on
+     */
     void open(const char *url, uint16 port);
+
+    /**
+     * Connects to a remote host
+     * @param host the host to connect to
+     * @param port the port to connect on
+     */
     void open(hostent *host, uint16 port);
+
+    /**
+     * Reads a given number of bytes into a buffer
+     * @param buffer the buffer to read into
+     * @param size   the number of bytes to read
+     * @return the number of bytes actually read. This will only be different from the size parameter if the socket was closed while trying to read from it
+     */
     size_t receive(char *buffer, size_t size);
-    void startRequestIndex();
-    void download(Game* entry);
-    void loadSimpleIconTest();
+
+    /**
+     * Sends a request and waits for a response from the server
+     * @param message the request to send
+     * @return the response from the server
+     */
+    Message sendAndWaitForResponse(Message message);
+
+    /**
+     * Sends a request without waiting for a response
+     * @param message the request to send
+     */
+    void sendWithoutWaiting(Message message);
+
+    /**
+     * Closes this socket
+     */
     void close();
+
+    /**
+     * Checks if this socket is connected
+     * @return whether or not this socket is connected
+     */
     bool isConnected();
 };
 

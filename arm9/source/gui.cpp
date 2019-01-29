@@ -51,11 +51,16 @@ void Gui::drawRect(int x, int y, int w, int h, u16 argb, Screen screen)  {
 int Gui::drawText(int x, int y, u16 argb, Screen screen, const char* text)   {
     //i don't even know if register does anything on the nds or if i'm overusing it but hey why not
     register int i = 0;
-    register int c;
+    register char c;
     register u16* p = screen == TOP ? DISPLAY_TOP : DISPLAY_BOTTOM;
-    while ((c = (unsigned char) text[i++]))    {
+    int origX = x;
+    while ((c = text[i++]))    {
         register unsigned int size = Font::SIZES[c];
         if (size == 0)    {
+            if (c == '\n') {
+                y += 10;
+                x = origX;
+            }
             continue;
         }
         register unsigned int letter = Font::LETTERS[c];

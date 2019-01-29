@@ -1,7 +1,7 @@
+#include <cstdarg>
 #include "main.h"
 
-static int counter = 0;
-static TCPSocket theSocket;
+static Console Console::INSTANCE;
 
 void vblank() {
     Gui::CURRENT_FRAME++;
@@ -11,7 +11,7 @@ void vblank() {
 
     if (Gui::QUEUED_REDRAW || keys || !(Gui::CURRENT_FRAME & 0xF)) {
         if (keys & KEY_START) {
-            theSocket.close();
+            Socket::INSTANCE.close();
             //exit(0);
         }
         touchRead(&Gui::TOUCH_POS);
@@ -28,7 +28,7 @@ int main() {
     try {
         printf("Testing errors\n");
 
-        theSocket.open("192.168.1.108", 8234);
+        Socket::INSTANCE.open("192.168.1.108", 8234);
         printf("Error not thrown!\n");
     } catch (const char *e) {
         printf("Caught exception!\n");
@@ -39,11 +39,11 @@ int main() {
 
     irqSet(IRQ_VBLANK, vblank);
 
+    //char* value = Socket::INSTANCE.sendAndWaitForResponse({1, "hello world", 12});
+    Message response = Socket::INSTANCE.sendAndWaitForResponse({2, nullptr, 0});
+
     while (true) {
         swiWaitForVBlank();
-        if (!(Gui::CURRENT_FRAME & 0x7))   {
-            theSocket.loadSimpleIconTest();
-        }
     }
 }
 
@@ -57,4 +57,13 @@ int max(int a, int b) {
 
 int clamp(int a, int min, int max) {
     return a < min ? min : a > max ? max : a;
+}
+
+char *format(char *format, ...) {
+    va_list v1;
+    va_start(v1, format);
+    size_t size = vsnprintf(nullptr, 0, format, v1) + 1;
+    char *result = new char[size];
+    vsnprintf(result, size, format, v1);
+    return result;
 }
