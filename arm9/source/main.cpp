@@ -4,7 +4,7 @@ void vblank() {
     Gui::CURRENT_FRAME++;
 
     scanKeys();
-    Gui::KEYS_DOWN = keysDown();
+    Gui::KEYS_DOWN |= keysDown();
     touchRead(&Gui::TOUCH_POS);
 
     for (std::vector<InputHandler>::iterator it = Gui::HANDLERS.begin(); it != Gui::HANDLERS.end(); it++) {
@@ -47,7 +47,23 @@ int main() {
                 Message *response = Socket::INSTANCE.sendAndWaitForResponse(new Message(2, "Hello server!", 13));
                 Console::BOTTOM->printf("Server response: %s", response->data);
                 delete response;
+            } else if (Gui::KEYS_DOWN & KEY_B) {
+                Message *response = Socket::INSTANCE.sendAndWaitForResponse(new Message(3, nullptr, 0));
+                char* data = response->data;
+                int w = ((int*) data)[0];
+                int h = ((int*) data)[1];
+                Console::TOP->printf("Loading %dx%d bitmap...", w, h);
+                u16* pixels = (u16*) (data + 8);
+                for (int x = w - 1; x >= 0; x--)    {
+                    for (int y = h - 1; y >= 0; y--)    {
+                        Gui::TEMP_DISPLAY_BOTTOM[x | (y << 8)] = *(pixels++);
+                    }
+                }
+                Console::TOP->print("Done!");
+                delete response;
             }
+
+            Gui::KEYS_DOWN = 0;
             if (min(1, 2) == 3) {
                 //this is just to trick my IDE into thinking that this loop isn't infinite
                 break;

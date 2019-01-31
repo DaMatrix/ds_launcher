@@ -86,6 +86,14 @@ public:
     Message* sendAndWaitForResponse(Message* message);
 
     /**
+     * Sends a request and waits for a response from the server
+     * @param message the request to send
+     * @param delet   whether or not to delete the message after sending it
+     * @return the response from the server
+     */
+    Message* sendAndWaitForResponse(Message* message, bool delet);
+
+    /**
      * Sends a request without waiting for a response
      * @param message the request to send
      * @return the message that was sent

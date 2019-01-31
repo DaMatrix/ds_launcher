@@ -13,8 +13,11 @@ import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
+import net.daporkchop.lib.common.function.io.IOBiConsumer;
 import net.daporkchop.lib.common.util.PorkUtil;
 
+import javax.imageio.ImageIO;
+import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.nio.charset.Charset;
@@ -44,6 +47,8 @@ public class Main {
     @SuppressWarnings("unchecked")
     public static BiConsumer<Channel, ByteBuf>[] HANDLERS = (BiConsumer<Channel, ByteBuf>[]) new BiConsumer[256];
     public static Collection<Channel> CHANNELS = Collections.synchronizedCollection(new HashSet<>());
+
+
 
     static {
         if (!ROOT_FOLDER.exists()) {
@@ -199,6 +204,27 @@ public class Main {
             System.out.printf("Sending some placeholder data back to %s...\n", ch.remoteAddress());
             send(ch, 1, "Hello client!".getBytes(Charset.forName("ASCII")));
         };
+        HANDLERS[3] = (IOBiConsumer<Channel, ByteBuf>) (ch, buf) -> {
+            System.out.printf("Sending an image to %s!\n", ch.remoteAddress());
+            BufferedImage img = ImageIO.read(new File("/media/daporkchop/TooMuchStuff/PortableIDE/Web/www.daporkchop.net/toembed/profilepic-128p.png"));
+            send(ch, 3, out -> {
+                out.writeIntLE(img.getWidth()).writeIntLE(img.getHeight());
+                for (int x = img.getWidth() - 1; x >= 0; x--)   {
+                    for (int y = img.getHeight() - 1; y >= 0; y--)  {
+                        int col = img.getRGB(x, y);
+                        int a = (col >>> 24) & 0xFF;
+                        if (a != 255)   {
+                            out.writeShortLE(0);
+                            continue;
+                        }
+                        int r = (col >>> 16) & 0xFF;
+                        int g = (col >>> 8) & 0xFF;
+                        int b = col & 0xFF;
+                        out.writeShortLE(0x8000 | ((b >>> 3) << 10) | ((g >>> 3) << 5) | (r >>> 3));
+                    }
+                }
+            });
+        };
     }
 
     public static void send(@NonNull Channel channel, int id, @NonNull byte[] data) {
@@ -214,7 +240,7 @@ public class Main {
         ByteBuf buf = channel.alloc().ioBuffer();
         buf.writeByte(id).writeIntLE(-1);
         dataWriter.accept(buf);
-        buf.setIntLE(1, buf.writerIndex() - 5);
+        buf.setIntLE(1, buf.writerIndex() - 6);
         channel.writeAndFlush(buf);
     }
 
@@ -230,6 +256,7 @@ public class Main {
         public void channelRegistered(ChannelHandlerContext ctx) throws Exception {
             System.out.printf("Incoming connection: %s\n", ctx.channel().remoteAddress());
             CHANNELS.add(ctx.channel());
+
             super.channelRegistered(ctx);
         }
 

@@ -70,10 +70,17 @@ bool Socket::isConnected() {
 }
 
 Message *Socket::sendAndWaitForResponse(Message *message) {
+    return this->sendAndWaitForResponse(message, true);
+}
+
+Message *Socket::sendAndWaitForResponse(Message *message, bool delet) {
     if (DEBUG_PACKETS)  {
         Console::TOP->printf("Sending request...");
     }
     this->sendWithoutWaiting(message);
+    if (delet)  {
+        delete message;
+    }
 
     if (DEBUG_PACKETS)  {
         Console::TOP->printf("Reading response...");
