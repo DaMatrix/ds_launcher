@@ -26,13 +26,18 @@ enum Screen {
 };
 
 typedef std::function<GuiExitCode (int keys)> MenuRenderer;
+typedef std::function<void (int keys, touchPosition* touchPos)> InputHandler;
 
 struct Gui {
     static u16* DISPLAY_TOP;
+    static u16* TEMP_DISPLAY_TOP;
     static u16* DISPLAY_BOTTOM;
+    static u16* TEMP_DISPLAY_BOTTOM;
     static int CURRENT_FRAME;
+    static int KEYS_DOWN;
     static touchPosition TOUCH_POS;
     static std::vector<MenuRenderer> MENU_STACK;
+    static std::vector<InputHandler> HANDLERS;
     static bool QUEUED_REDRAW;
 public:
     //draw methods

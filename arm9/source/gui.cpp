@@ -1,23 +1,39 @@
 #include "gui.h"
 
-u16* getStuff(bool top) {
+u16* getStuff(bool top, bool temp) {
     if (top) {
-        powerOn(POWER_ALL_2D);
+        if (temp)   {
+            int id = bgInit(2, BgType_Bmp16, BgSize_B16_256x256, 0, 0);
+            bgHide(id);
+            return bgGetGfxPtr(id);
+        }else {
+            powerOn(POWER_ALL_2D);
 
-        videoSetMode(MODE_3_2D);
-        videoSetModeSub(MODE_3_2D);
+            videoSetMode(MODE_3_2D);
+            videoSetModeSub(MODE_3_2D);
 
-        return bgGetGfxPtr(bgInit(3, BgType_Bmp16, BgSize_B16_256x256, 0, 0));
+            return bgGetGfxPtr(bgInit(3, BgType_Bmp16, BgSize_B16_256x256, 0, 0));
+        }
     } else {
-        return bgGetGfxPtr(bgInitSub(3, BgType_Bmp16, BgSize_B16_256x256, 0, 0));
+        if (temp)   {
+            int id = bgInitSub(2, BgType_Bmp16, BgSize_B16_256x256, 0, 0);
+            bgHide(id);
+            return bgGetGfxPtr(id);
+        }else {
+            return bgGetGfxPtr(bgInitSub(3, BgType_Bmp16, BgSize_B16_256x256, 0, 0));
+        }
     }
 }
 
-u16* Gui::DISPLAY_TOP = getStuff(true);
-u16* Gui::DISPLAY_BOTTOM = getStuff(false);
+u16* Gui::DISPLAY_TOP = getStuff(true, false);
+u16* Gui::DISPLAY_BOTTOM = getStuff(false, false);
+u16* Gui::TEMP_DISPLAY_TOP = getStuff(true, true);
+u16* Gui::TEMP_DISPLAY_BOTTOM = getStuff(false, true);
 int Gui::CURRENT_FRAME = 0;
 touchPosition Gui::TOUCH_POS;
 std::vector<MenuRenderer> Gui::MENU_STACK;
+std::vector<InputHandler> Gui::HANDLERS;
+int Gui::KEYS_DOWN;
 bool Gui::QUEUED_REDRAW = true;
 
 Console* Console::TOP = new Console(Screen::TOP);
@@ -43,7 +59,7 @@ void Gui::drawRect(int x, int y, int w, int h, u16 argb, Screen screen)  {
     if (x >= SCREEN_WIDTH || y >= SCREEN_HEIGHT || w <= 0 || h <= 0)    {
         return;
     }
-    register u16* p = screen == TOP ? DISPLAY_TOP : DISPLAY_BOTTOM;
+    register u16* p = screen == TOP ? TEMP_DISPLAY_TOP : TEMP_DISPLAY_BOTTOM;
     for (register int xx = w - 1; xx >= 0; xx--) {
         for (register int yy = h - 1; yy >= 0; yy--) {
             p[x + xx + ((y + yy) << 8)] = argb;
@@ -55,7 +71,7 @@ int Gui::drawText(int x, int y, u16 argb, Screen screen, const char* text)   {
     //i don't even know if register does anything on the nds or if i'm overusing it but hey why not
     register int i = 0;
     register char c;
-    register u16* p = screen == TOP ? DISPLAY_TOP : DISPLAY_BOTTOM;
+    register u16* p = screen == TOP ? TEMP_DISPLAY_TOP : TEMP_DISPLAY_BOTTOM;
     int origX = x;
     while ((c = text[i++]))    {
         register unsigned int size = Font::SIZES[c];
@@ -86,8 +102,8 @@ void Gui::clear() {
     for (int x = SCREEN_WIDTH - 1; x >= 0; x--) {
         for (int y = SCREEN_HEIGHT - 1; y >= 0; y--)    {
             int i = x | (y << 8);
-            Gui::DISPLAY_TOP[i] = 0;
-            Gui::DISPLAY_BOTTOM[i] = 0;
+            Gui::TEMP_DISPLAY_TOP[i] = 0;
+            Gui::TEMP_DISPLAY_BOTTOM[i] = 0;
         }
     }
     Console::TOP->row = Console::BOTTOM->row = 0;

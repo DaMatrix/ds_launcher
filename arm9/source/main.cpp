@@ -4,15 +4,16 @@ void vblank() {
     Gui::CURRENT_FRAME++;
 
     scanKeys();
-    int keys = keysDown();
+    Gui::KEYS_DOWN = keysDown();
+    touchRead(&Gui::TOUCH_POS);
 
-    if (Gui::QUEUED_REDRAW || keys || !(Gui::CURRENT_FRAME & 0xF)) {
-        if (keys & KEY_START) {
-            Console::TOP->print("Closing socket...");
-            Socket::INSTANCE.close();
-            //exit(0);
-        }
-        touchRead(&Gui::TOUCH_POS);
+    for (std::vector<InputHandler>::iterator it = Gui::HANDLERS.begin(); it != Gui::HANDLERS.end(); it++) {
+        (*it)(Gui::KEYS_DOWN, &Gui::TOUCH_POS);
+    }
+
+    if (Gui::QUEUED_REDRAW || !(Gui::CURRENT_FRAME & 0xF)) {
+        memcpy(Gui::DISPLAY_TOP, Gui::TEMP_DISPLAY_TOP, 256 * 256 * sizeof(u16));
+        memcpy(Gui::DISPLAY_BOTTOM, Gui::TEMP_DISPLAY_BOTTOM, 256 * 256 * sizeof(u16));
 
         //GuiExitCode exitCode = Gui::MENU_STACK.back()(keys);
 
@@ -23,6 +24,14 @@ void vblank() {
 int main() {
     Font::init();
 
+    Gui::HANDLERS.push_back([](int keys, touchPosition *touch) -> void {
+        if (keys & KEY_START) {
+            Console::TOP->print("Closing socket...");
+            Socket::INSTANCE.close();
+            //exit(0);
+        }
+    });
+
     try {
         Console::TOP->print("Connecting to server...");
         Socket::INSTANCE.open("192.168.1.108", 8234);
@@ -32,23 +41,24 @@ int main() {
 
         irqSet(IRQ_VBLANK, vblank);
 
-        delete Socket::INSTANCE.sendWithoutWaiting(new Message(1, "Hello from client!"));
-        delete Socket::INSTANCE.sendAndWaitForResponse(new Message(2, nullptr, 0));
-
-        Console::TOP->print("Waiting...");
-        for (int i = 0; i < 120; i++)   {
+        while (true) {
             swiWaitForVBlank();
+            if (Gui::KEYS_DOWN & KEY_A) {
+                Message *response = Socket::INSTANCE.sendAndWaitForResponse(new Message(2, "Hello server!", 13));
+                Console::BOTTOM->printf("Server response: %s", response->data);
+                delete response;
+            }
+            if (min(1, 2) == 3) {
+                //this is just to trick my IDE into thinking that this loop isn't infinite
+                break;
+            }
         }
-
-        Gui::clear();
-        delete Socket::INSTANCE.sendAndWaitForResponse(new Message(2, "hello world", 12));
-        Console::TOP->print("Done!");
-        Console::BOTTOM->print("Done!");
     } catch (const char *e) {
         Gui::drawText(5, 5, ARGB16(1, 31, 0, 0), BOTTOM, e);
-    } catch (void* e) {
+    } catch (void *e) {
         Gui::drawText(5, 5, ARGB16(1, 31, 0, 0), BOTTOM, "Exception");
     }
+    Socket::INSTANCE.close();
     while (true) {
         swiWaitForVBlank();
     }

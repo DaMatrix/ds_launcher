@@ -6,11 +6,13 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandler;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.channel.ChannelInboundHandlerAdapter;
+import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
 import io.netty.channel.EventLoopGroup;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
 import lombok.NonNull;
+import lombok.RequiredArgsConstructor;
 import net.daporkchop.lib.common.util.PorkUtil;
 
 import java.io.File;
@@ -23,8 +25,11 @@ import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.Map;
 import java.util.Scanner;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiConsumer;
+import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 /**
  * @author DaPorkchop_
@@ -128,12 +133,34 @@ public class Main {
         ServerBootstrap bootstrap = new ServerBootstrap();
         bootstrap.group(group, group);
         bootstrap.channel(NioServerSocketChannel.class);
-        bootstrap.childHandler(new PHandler());
+        bootstrap.childHandler(new ChannelInitializer<Channel>() {
+            @Override
+            protected void initChannel(Channel ch) throws Exception {
+                ch.pipeline().addLast("pork", new PHandler(ch));
+            }
+        });
         bootstrap.option(ChannelOption.SO_BACKLOG, 256);
         bootstrap.childOption(ChannelOption.SO_KEEPALIVE, true);
 
         setHandlers();
         Channel channel = bootstrap.bind(8234).syncUninterruptibly().channel();
+        {
+            Thread t = new Thread(() -> {
+                try {
+                    while (true) {
+                        Thread.sleep(1000L);
+                        CHANNELS.stream()
+                                .map(ch -> ch.pipeline().get(PHandler.class))
+                                .filter(handler -> handler.lastActive + TimeUnit.MINUTES.toMillis(2L) < System.currentTimeMillis())
+                                .collect(Collectors.toList()).forEach(handler -> handler.channel.close());
+                    }
+                } catch (InterruptedException e)     {
+                    throw new RuntimeException(e);
+                }
+            });
+            t.setDaemon(true);
+            t.start();
+        }
         try (Scanner scanner = new Scanner(System.in)) {
             LOOP:
             while (true) {
@@ -170,11 +197,7 @@ public class Main {
         };
         HANDLERS[2] = (ch, buf) -> {
             System.out.printf("Sending some placeholder data back to %s...\n", ch.remoteAddress());
-            send(ch, 1, "Hello World!".getBytes(Charset.forName("ASCII")));
-            //ch.writeAndFlush(ch.alloc().ioBuffer().writeByte(1)//.writeByte(0)
-            //        .writeIntLE(12)//.writeByte(0)
-            //        .writeBytes("Hello World!".getBytes(Charset.forName("ASCII"))).writeByte(0));
-            //ch.close();
+            send(ch, 1, "Hello client!".getBytes(Charset.forName("ASCII")));
         };
     }
 
@@ -187,9 +210,21 @@ public class Main {
         );
     }
 
-    @ChannelHandler.Sharable
+    public static void send(@NonNull Channel channel, int id, @NonNull Consumer<ByteBuf> dataWriter) {
+        ByteBuf buf = channel.alloc().ioBuffer();
+        buf.writeByte(id).writeIntLE(-1);
+        dataWriter.accept(buf);
+        buf.setIntLE(1, buf.writerIndex() - 5);
+        channel.writeAndFlush(buf);
+    }
+
+    @RequiredArgsConstructor
     protected static class PHandler extends ChannelInboundHandlerAdapter {
         protected final File[] roms = new File("/media/daporkchop/TooMuchStuff/Misc/ds").listFiles((file, name) -> name.endsWith(".nds"));
+        protected long lastActive = System.currentTimeMillis();
+
+        @NonNull
+        protected final Channel channel;
 
         @Override
         public void channelRegistered(ChannelHandlerContext ctx) throws Exception {
@@ -234,6 +269,7 @@ public class Main {
                 }
             }
 
+            this.lastActive = System.currentTimeMillis();
             super.channelRead(ctx, msg);
         }
     }

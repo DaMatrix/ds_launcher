@@ -2,6 +2,8 @@
 
 Socket Socket::INSTANCE;
 
+const bool DEBUG_PACKETS = false;
+
 Message::~Message() {
     if (this->data != nullptr && !this->isConst) {
         delete this->data;
@@ -68,28 +70,38 @@ bool Socket::isConnected() {
 }
 
 Message *Socket::sendAndWaitForResponse(Message *message) {
-    Console::TOP->printf("Sending request...");
+    if (DEBUG_PACKETS)  {
+        Console::TOP->printf("Sending request...");
+    }
     this->sendWithoutWaiting(message);
 
-    Console::TOP->printf("Reading response...");
+    if (DEBUG_PACKETS)  {
+        Console::TOP->printf("Reading response...");
+    }
 
     char id = 0;
-    Console::TOP->printf("Reading ID...");
+    if (DEBUG_PACKETS)  {
+        Console::TOP->printf("Reading ID...");
+    }
     if (this->receive(&id, 1) != 1) {
         throw "Couldn't read ID!";
     } else if (id == 0 && this->receive(&id, 1) != 1) {
         throw "Couldn't read ID!";
     }
-    Console::TOP->printf("ID: %d", id);
+    if (DEBUG_PACKETS)  {
+        Console::TOP->printf("ID: %d", id);
+    }
 
     int length = 0;
-    Console::TOP->printf("Reading Length...");
+    if (DEBUG_PACKETS)  {
+        Console::TOP->printf("Reading Length...");
+    }
     if (this->receive((char *) &length, 4) != 4) {
         throw "Couldn't read length!";
     }
-    Console::TOP->printf("Length: %d", length);
+    if (DEBUG_PACKETS)  {
+        Console::TOP->printf("Length: %d", length);
 
-    if (true) {
         char *text = format("Response length: %d\nResponse ID: %d", length, id & 0xFF);
         Gui::drawText(SCREEN_WIDTH >> 1, 35, ARGB16(1, 0, 31, 0), TOP, text);
         delete text;
@@ -105,7 +117,7 @@ Message *Socket::sendAndWaitForResponse(Message *message) {
     response->id = id;
     response->len = length;
 
-    if (true) {
+    if (DEBUG_PACKETS) {
         char *text = format("Response ID: %d\nResponse length: %d\nResponse data: %s", response->id & 0xFF, response->len, response->hasContent() ? response->data : "null");
         Gui::drawText(5, 5, ARGB16(1, 0, 31, 0), BOTTOM, text);
         delete text;
