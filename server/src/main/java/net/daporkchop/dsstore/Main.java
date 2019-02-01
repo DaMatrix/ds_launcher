@@ -15,6 +15,7 @@ import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 import net.daporkchop.lib.common.function.io.IOBiConsumer;
 import net.daporkchop.lib.common.util.PorkUtil;
+import net.daporkchop.lib.nds.RomNDS;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
@@ -206,7 +207,12 @@ public class Main {
         };
         HANDLERS[3] = (IOBiConsumer<Channel, ByteBuf>) (ch, buf) -> {
             System.out.printf("Sending an image to %s!\n", ch.remoteAddress());
-            BufferedImage img = ImageIO.read(new File("/media/daporkchop/TooMuchStuff/PortableIDE/Web/www.daporkchop.net/toembed/profilepic-128p.png"));
+            //BufferedImage img = ImageIO.read(new File("/media/daporkchop/TooMuchStuff/PortableIDE/Web/www.daporkchop.net/toembed/profilepic-128p.png"));
+            File[] roms = new File(/*"/media/daporkchop/TooMuchStuff/Misc/ds"*/ "/home/daporkchop/192.168.1.119/Torrents/ROMs").listFiles((file, name) -> name.endsWith(".nds"));
+            BufferedImage img;
+            try (RomNDS rom = new RomNDS(roms[buf.readIntLE() % roms.length]))    {
+                img = rom.getHeaders().getIconTitle().getIcon().getAsBufferedImage();
+            }
             send(ch, 3, out -> {
                 out.writeIntLE(img.getWidth()).writeIntLE(img.getHeight());
                 for (int x = img.getWidth() - 1; x >= 0; x--)   {
@@ -239,8 +245,11 @@ public class Main {
     public static void send(@NonNull Channel channel, int id, @NonNull Consumer<ByteBuf> dataWriter) {
         ByteBuf buf = channel.alloc().ioBuffer();
         buf.writeByte(id).writeIntLE(-1);
+        int start = buf.writerIndex();
         dataWriter.accept(buf);
-        buf.setIntLE(1, buf.writerIndex() - 6);
+        buf.writeByte(0);
+        buf.setIntLE(1, buf.writerIndex() - start - 1);
+        System.out.printf("%d bytes\n", buf.getIntLE(1));
         channel.writeAndFlush(buf);
     }
 

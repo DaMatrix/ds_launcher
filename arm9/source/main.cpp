@@ -21,6 +21,12 @@ void vblank() {
     }
 }
 
+typedef struct {
+    int w;
+    int h;
+    u16 pixels[32 * 32];
+} Icon;
+
 int main() {
     Font::init();
 
@@ -41,26 +47,26 @@ int main() {
 
         irqSet(IRQ_VBLANK, vblank);
 
+        int counter = 0;
         while (true) {
             swiWaitForVBlank();
             if (Gui::KEYS_DOWN & KEY_A) {
-                Message *response = Socket::INSTANCE.sendAndWaitForResponse(new Message(2, "Hello server!", 13));
+                Message *response = Socket::INSTANCE.sendAndWaitForResponse(new Message(2, "Hello server!"));
                 Console::BOTTOM->printf("Server response: %s", response->data);
                 delete response;
             } else if (Gui::KEYS_DOWN & KEY_B) {
-                Message *response = Socket::INSTANCE.sendAndWaitForResponse(new Message(3, nullptr, 0));
-                char* data = response->data;
-                int w = ((int*) data)[0];
-                int h = ((int*) data)[1];
-                Console::TOP->printf("Loading %dx%d bitmap...", w, h);
-                u16* pixels = (u16*) (data + 8);
-                for (int x = w - 1; x >= 0; x--)    {
-                    for (int y = h - 1; y >= 0; y--)    {
-                        Gui::TEMP_DISPLAY_BOTTOM[x | (y << 8)] = *(pixels++);
+                Message *response = Socket::INSTANCE.sendAndWaitForResponse(new Message(3, (char*) &counter, 4, true));
+                counter++;
+                Icon* icon = (Icon*) response->data;
+                Console::TOP->printf("Loading %dx%d bitmap...", icon->w, icon->h);
+                for (int x = icon->w - 1; x >= 0; x--)    {
+                    for (int y = icon->h - 1; y >= 0; y--)    {
+                        Gui::TEMP_DISPLAY_BOTTOM[x | (y << 8)] = icon->pixels[(icon->w - 1 - x) * icon->w + icon->h - 1 - y];
                     }
                 }
                 Console::TOP->print("Done!");
                 delete response;
+                Gui::QUEUED_REDRAW = true;
             }
 
             Gui::KEYS_DOWN = 0;

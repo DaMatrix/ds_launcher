@@ -74,20 +74,20 @@ Message *Socket::sendAndWaitForResponse(Message *message) {
 }
 
 Message *Socket::sendAndWaitForResponse(Message *message, bool delet) {
-    if (DEBUG_PACKETS)  {
+    if (DEBUG_PACKETS) {
         Console::TOP->printf("Sending request...");
     }
     this->sendWithoutWaiting(message);
-    if (delet)  {
+    if (delet) {
         delete message;
     }
 
-    if (DEBUG_PACKETS)  {
+    if (DEBUG_PACKETS) {
         Console::TOP->printf("Reading response...");
     }
 
     char id = 0;
-    if (DEBUG_PACKETS)  {
+    if (DEBUG_PACKETS) {
         Console::TOP->printf("Reading ID...");
     }
     if (this->receive(&id, 1) != 1) {
@@ -95,20 +95,26 @@ Message *Socket::sendAndWaitForResponse(Message *message, bool delet) {
     } else if (id == 0 && this->receive(&id, 1) != 1) {
         throw "Couldn't read ID!";
     }
-    if (DEBUG_PACKETS)  {
+    if (DEBUG_PACKETS) {
         Console::TOP->printf("ID: %d", id);
     }
 
     int length = 0;
-    if (DEBUG_PACKETS)  {
+    if (DEBUG_PACKETS) {
         Console::TOP->printf("Reading Length...");
     }
     if (this->receive((char *) &length, 4) != 4) {
         throw "Couldn't read length!";
     }
-    if (DEBUG_PACKETS)  {
-        Console::TOP->printf("Length: %d", length);
 
+    if (DEBUG_PACKETS) {
+        Console::TOP->printf("Length: %d", length);
+        for (int i = 0; i < 120; i++) {
+            swiWaitForVBlank();
+        }
+    }
+
+    if (DEBUG_PACKETS) {
         char *text = format("Response length: %d\nResponse ID: %d", length, id & 0xFF);
         Gui::drawText(SCREEN_WIDTH >> 1, 35, ARGB16(1, 0, 31, 0), TOP, text);
         delete text;
@@ -130,13 +136,14 @@ Message *Socket::sendAndWaitForResponse(Message *message, bool delet) {
         delete text;
     }
 
+    //DEBUG_PACKETS = true;
     return response;
 }
 
-Message* Socket::sendWithoutWaiting(Message *message) {
+Message *Socket::sendWithoutWaiting(Message *message) {
     if (message->hasContent() > 0) {
         int total = message->len + 4 + 1 + 1;
-        char* temp = new char[total];
+        char *temp = new char[total];
         temp[0] = message->id;
         memcpy(temp + 1, &message->len, 4);
         memcpy(temp + 5, message->data, message->len);
@@ -144,7 +151,7 @@ Message* Socket::sendWithoutWaiting(Message *message) {
         send(this->socketId, temp, total, 0);
         delete temp;
     } else {
-        char* temp = new char[6];
+        char *temp = new char[6];
         temp[0] = message->id;
         temp[1] = temp[2] = temp[3] = temp[4] = temp[5] = 0;
         send(this->socketId, temp, 6, 0);

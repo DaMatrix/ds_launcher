@@ -30,6 +30,13 @@ public:
         this->isConst = false;
     }
 
+    Message(unsigned char id, char* data, int len, bool isConst)  {
+        this->id = id;
+        this->data = data;
+        this->len = len;
+        this->isConst = isConst;
+    }
+
     Message(unsigned char id, const char* data)  {
         this->id = id;
         this->data = (char*) data;
