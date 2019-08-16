@@ -18,12 +18,12 @@ DATA		:=
 # options for code generation
 ARCH	:=	-mthumb-interwork
 
-CFLAGS	:=	-g -Wall -O2\
+CFLAGS	:=	-g -Wall -O2 \
 		-mcpu=arm7tdmi -mtune=arm7tdmi -fomit-frame-pointer\
 		-ffast-math \
 		$(ARCH)
 
-CFLAGS	+=	$(INCLUDE) -DARM7
+CFLAGS	+=	$(INCLUDE) -DARM7 -DNDS -DDSI
 CXXFLAGS	:=	$(CFLAGS) -fno-rtti -fno-rtti
 
 
@@ -88,7 +88,7 @@ $(ARM7ELF)	:	$(OFILES)
 	@$(LD)  $(LDFLAGS) $(OFILES) $(LIBPATHS) $(LIBS) -o $@
 
 
-# you need a rule like this for each extension you use as binary data 
+# you need a rule like this for each extension you use as binary data
 %.bin.o	:	%.bin
 	@echo $(notdir $<)
 	@$(bin2o)

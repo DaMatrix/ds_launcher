@@ -1,4 +1,5 @@
 #include "main.h"
+#include "porklib/crypto/digest/sha1.h"
 
 void vblank() {
     Gui::CURRENT_FRAME++;
@@ -29,6 +30,20 @@ typedef struct {
 
 int main() {
     Font::init();
+
+    if (true)   {
+        porklib::crypto::digest::SHA1 digest;
+        digest.init();
+        digest.finish();
+        Console::TOP->print(digest.asHex());
+        digest.init();
+        digest.update("The quick brown fox jumps over the lazy dog", 43);
+        digest.finish();
+        Console::TOP->print(digest.asHex());
+        while (true) {
+            swiWaitForVBlank();
+        }
+    }
 
     Gui::HANDLERS.push_back([](int keys, touchPosition *touch) -> void {
         if (keys & KEY_START) {

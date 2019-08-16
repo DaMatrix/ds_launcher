@@ -6,13 +6,19 @@ project(ds_launcher)
 
 set(CMAKE_CXX_STANDARD 17)
 
-add_subdirectory(lib/porklib)
+set(CMAKE_C_FLAGS "-DNDS -DDSI")
+set(CMAKE_CXX_FLAGS ${CMAKE_C_FLAGS})
 
 # Set to your devkitPro's installation dir if environment variable does not exist.
 set(DEVKITPRO $ENV{DEVKITPRO})
 set(LIBNDS ${DEVKITPRO}/libnds)
 set(LIBNDS_INCLUDE ${LIBNDS}/include)
 set(LIBNDS_LINK ${LIBNDS}/lib)
+
+include_directories(${LIBNDS_INCLUDE})
+link_directories(${LIBNDS_LINK})
+
+add_subdirectory(lib/porklib)
 
 add_subdirectory(arm7)
 add_subdirectory(arm9)

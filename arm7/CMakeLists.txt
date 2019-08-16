@@ -2,11 +2,8 @@ cmake_minimum_required(VERSION 3.13)
 
 project(template-arm7)
 
-set(CMAKE_C_FLAGS -DARM7)
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -DARM7")
 set(CMAKE_CXX_FLAGS ${CMAKE_C_FLAGS})
-
-include_directories(${LIBNDS_INCLUDE})
-link_directories(${LIBNDS_LINK})
 
 add_executable(template-arm7 "")
 

@@ -11,19 +11,19 @@ include $(DEVKITARM)/ds_rules
 # DATA is a list of directories containing binary files
 # all directories are relative to this makefile
 BUILD		:=	build
-SOURCES		:=	source ../lib/porklib/source
-INCLUDES	:=	include ../lib/porklib/source
+SOURCES		:=	lib/porklib source
+INCLUDES	:=	include lib/porklib
 DATA		:=
 
 # options for code generation
 ARCH	:=	-mthumb -mthumb-interwork
 
-CFLAGS	:=	-g -Wall -O2\
+CFLAGS	:=	-g -Wall -O2 \
 			-march=armv5te -mtune=arm946e-s -fomit-frame-pointer\
 			-ffast-math \
 			$(ARCH)
 
-CFLAGS	+=	$(INCLUDE) -DARM9
+CFLAGS	+=	$(INCLUDE) -DARM9 -DNDS -DDSI
 CXXFLAGS	:= $(CFLAGS) -fno-rtti
 
 ASFLAGS	:=	-g $(ARCH) -march=armv5te -mtune=arm946e-s
@@ -76,7 +76,7 @@ $(BUILD):
 
 clean:
 	@echo clean ...
-	@rm -fr $(BUILD) *.elf *.nds* *.bin 
+	@rm -fr $(BUILD) *.elf *.nds* *.bin
 
 
 else
