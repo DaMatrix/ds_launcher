@@ -1,28 +1,17 @@
-cmake_minimum_required(VERSION 3.9)
+cmake_minimum_required(VERSION 3.13)
 
 project(template-arm7)
-
-set(CMAKE_CXX_STANDARD 14)
 
 set(CMAKE_C_FLAGS -DARM7)
 set(CMAKE_CXX_FLAGS ${CMAKE_C_FLAGS})
 
-# Set to your devkitPro's installation dir if environment variable does not exist.
-set(DEVKITPRO $ENV{DEVKITPRO})
+include_directories(${LIBNDS_INCLUDE})
+link_directories(${LIBNDS_LINK})
 
-include_directories(${DEVKITPRO}/libnds/lib)
-include_directories(${DEVKITPRO}/libnds/include)
-include_directories(${DEVKITPRO}/libnds/include/nds)
-include_directories(${DEVKITPRO}/libnds/include/nds/arm7)
-include_directories(${DEVKITPRO}/devkitARM)
+add_executable(template-arm7 "")
 
-include_directories(include)
+file(GLOB_RECURSE sources CONFIGURE_DEPENDS "${PROJECT_SOURCE_DIR}/source/*.cpp")
+file(GLOB_RECURSE headers CONFIGURE_DEPENDS "${PROJECT_SOURCE_DIR}/source/*.h")
+target_sources(template-arm7 PRIVATE ${sources} PUBLIC ${headers})
 
-link_directories(${DEVKITPRO}/libnds/lib)
-link_directories(${DEVKITPRO}/libnds/include)
-link_directories(${DEVKITPRO}/libnds/include/nds)
-link_directories(${DEVKITPRO}/libnds/include/nds/arm7)
-
-add_executable(template-arm7
-        source/main.cpp include/main.h
-        )
+target_link_libraries(template-arm7 porklib_cpp)

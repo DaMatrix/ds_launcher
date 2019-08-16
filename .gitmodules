@@ -1,0 +1,3 @@
+[submodule "lib/porklib"]
+	path = lib/porklib
+	url = https://github.com/PorkStudios/PorkLib_cpp.git

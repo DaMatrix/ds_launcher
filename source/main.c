@@ -1,4 +1,4 @@
-#include <main.h>
+#include "../arm7/source/main.h"
 
 int main(void) {
     if (fatInitDefault()) {

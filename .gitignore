@@ -1,14 +1,22 @@
-/build/
-/arm7/build/
-/arm9/build/
-*.nds
+#compile stuff
+build/
+*.a
+*.d
+*.o
+*.s
+*.so
 *.elf
-/nbproject/
+*.arm7
+*.arm9
+*.nds
+*.class
+*.jar
+cmake-build-debug/
+cmake-build-release/
+.gradle/
+
+#ide stuff
+.idea/
+.clion/
 *.iml
 *.ipr
-.idea/
-/examples/
-*.jar
-*.class
-/server/build
-/server/.gradle

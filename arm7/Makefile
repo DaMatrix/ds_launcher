@@ -11,8 +11,8 @@ include $(DEVKITARM)/ds_rules
 # DATA is a list of directories containing binary files
 # all directories are relative to this makefile
 BUILD		:=	build
-SOURCES		:=	source  
-INCLUDES	:=	include build
+SOURCES		:=	source ../lib/porklib/source
+INCLUDES	:=	include ../lib/porklib/source
 DATA		:=
  
 # options for code generation
