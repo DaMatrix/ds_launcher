@@ -1,5 +1,5 @@
 #include "main.h"
-#include "porklib/crypto/digest/sha1.h"
+#include <porklib/crypto/digest/sha1.h>
 
 void vblank() {
     Gui::CURRENT_FRAME++;

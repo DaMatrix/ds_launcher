@@ -15,6 +15,9 @@ set(LIBNDS ${DEVKITPRO}/libnds)
 set(LIBNDS_INCLUDE ${LIBNDS}/include)
 set(LIBNDS_LINK ${LIBNDS}/lib)
 
+set(CMAKE_C_COMPILER ${DEVKITPRO}/devkitARM/bin/arm-none-eabi-gcc CACHE PATH "" FORCE)
+set(CMAKE_CXX_COMPILER ${DEVKITPRO}/devkitARM/bin/arm-none-eabi-g++ CACHE PATH "" FORCE)
+
 include_directories(${LIBNDS_INCLUDE})
 link_directories(${LIBNDS_LINK})
 

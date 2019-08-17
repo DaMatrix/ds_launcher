@@ -11,6 +11,8 @@ build/
 *.nds
 *.class
 *.jar
+.map
+*.map
 cmake-build-debug/
 cmake-build-release/
 .gradle/

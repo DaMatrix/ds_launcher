@@ -59,22 +59,21 @@ void Gui::drawRect(int x, int y, int w, int h, u16 argb, Screen screen)  {
     if (x >= SCREEN_WIDTH || y >= SCREEN_HEIGHT || w <= 0 || h <= 0)    {
         return;
     }
-    register u16* p = screen == TOP ? TEMP_DISPLAY_TOP : TEMP_DISPLAY_BOTTOM;
-    for (register int xx = w - 1; xx >= 0; xx--) {
-        for (register int yy = h - 1; yy >= 0; yy--) {
+    u16* p = screen == TOP ? TEMP_DISPLAY_TOP : TEMP_DISPLAY_BOTTOM;
+    for (int xx = w - 1; xx >= 0; xx--) {
+        for (int yy = h - 1; yy >= 0; yy--) {
             p[x + xx + ((y + yy) << 8)] = argb;
         }
     }
 }
 
 int Gui::drawText(int x, int y, u16 argb, Screen screen, const char* text)   {
-    //i don't even know if register does anything on the nds or if i'm overusing it but hey why not
-    register int i = 0;
-    register char c;
-    register u16* p = screen == TOP ? TEMP_DISPLAY_TOP : TEMP_DISPLAY_BOTTOM;
+    int i = 0;
+    char c;
+    u16* p = screen == TOP ? TEMP_DISPLAY_TOP : TEMP_DISPLAY_BOTTOM;
     int origX = x;
     while ((c = text[i++]))    {
-        register unsigned int size = Font::SIZES[c];
+        unsigned int size = Font::SIZES[c];
         if (size == 0)    {
             if (c == '\n') {
                 y += 10;
@@ -82,12 +81,12 @@ int Gui::drawText(int x, int y, u16 argb, Screen screen, const char* text)   {
             }
             continue;
         }
-        register unsigned int letter = Font::LETTERS[c];
-        register int w = size & 0xF;
-        register int h = (size >> 4) & 0xF;
-        register int off = (size >> 8) & 0xF;
-        for (register int xx = w - 1; xx >= 0 ; xx--)    {
-            for (register int yy = h - 1; yy >= 0; yy--) {
+        unsigned int letter = Font::LETTERS[c];
+        int w = size & 0xF;
+        int h = (size >> 4) & 0xF;
+        int off = (size >> 8) & 0xF;
+        for (int xx = w - 1; xx >= 0 ; xx--)    {
+            for (int yy = h - 1; yy >= 0; yy--) {
                 if (letter & (1 << (yy * w + xx)))   {
                     p[x + xx + ((y + yy + off) << 8)] = argb;
                 }
