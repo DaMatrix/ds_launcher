@@ -20,26 +20,20 @@ include $(DEVKITARM)/ds_rules
 .PHONY: checkarm7 checkarm9 clean
 
 # main targets
-all: checkarm7 checkarm9 $(TARGET).nds
+all: $(TARGET).nds
 
 checkarm7:
 	$(MAKE) -C arm7
-	
+
 checkarm9:
 	$(MAKE) -C arm9
 
-$(TARGET).nds	: $(NITRO_FILES) arm7/$(TARGET).elf arm9/$(TARGET).elf
-	ndstool	-c $(TARGET).nds -7 arm7/$(TARGET).elf -9 arm9/$(TARGET).elf \
+$(TARGET).nds	: $(NITRO_FILES) checkarm7 checkarm9
+	ndstool	-c $(TARGET).nds -7 arm7/arm7.elf -9 arm9/arm9.elf \
 	-b $(GAME_ICON) "$(GAME_TITLE);$(GAME_SUBTITLE1);$(GAME_SUBTITLE2)" \
 	$(_ADDFILES)
-
-arm7/$(TARGET).elf:
-	$(MAKE) -C arm7
-	
-arm9/$(TARGET).elf:
-	$(MAKE) -C arm9
 
 clean:
 	$(MAKE) -C arm9 clean
 	$(MAKE) -C arm7 clean
-	rm -f $(TARGET).nds $(TARGET).arm7 $(TARGET).arm9
+	rm -f $(TARGET).nds arm7/arm7.elf arm9/arm9.elf

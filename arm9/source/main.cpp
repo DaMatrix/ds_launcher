@@ -31,20 +31,6 @@ typedef struct {
 int main() {
     Font::init();
 
-    if (true)   {
-        porklib::crypto::digest::SHA1 digest;
-        digest.init();
-        digest.finish();
-        Console::TOP->print(digest.asHex());
-        digest.init();
-        digest.update("The quick brown fox jumps over the lazy dog", 43);
-        digest.finish();
-        Console::TOP->print(digest.asHex());
-        while (true) {
-            swiWaitForVBlank();
-        }
-    }
-
     Gui::HANDLERS.push_back([](int keys, touchPosition *touch) -> void {
         if (keys & KEY_START) {
             Console::TOP->print("Closing socket...");
@@ -111,13 +97,4 @@ int max(int a, int b) {
 
 int clamp(int a, int min, int max) {
     return a < min ? min : a > max ? max : a;
-}
-
-char *format(char *format, ...) {
-    va_list v1;
-    va_start(v1, format);
-    size_t size = vsnprintf(nullptr, 0, format, v1) + 1;
-    char *result = new char[size];
-    vsnprintf(result, size, format, v1);
-    return result;
 }

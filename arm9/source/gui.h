@@ -65,12 +65,12 @@ public:
         this->screen = screen;
     }
 
-    void printf(int x, int y, char* text, ...);
-    void print(int x, int y, char* text);
-    void printf(char* text, ...);
-    void print(char* text);
-    void dprintf(int x, int y, char* text, ...);
-    void dprint(int x, int y, char* text);
+    void printf(int x, int y, const char* text, ...);
+    void print(int x, int y, const char* text);
+    void printf(const char* text, ...);
+    void print(const char* text);
+    void dprintf(int x, int y, const char* text, ...);
+    void dprint(int x, int y, const char* text);
 };
 
 #endif //TEMPLATE_REFS_H

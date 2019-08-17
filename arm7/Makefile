@@ -41,18 +41,20 @@ LIBDIRS	:=	$(LIBNDS)
 # rules for different file extensions
 ifneq ($(BUILD),$(notdir $(CURDIR)))
  
-export ARM7ELF	:=	$(CURDIR)/$(TARGET).elf
+export ARM7ELF	:=	$(CURDIR)/arm7.elf
 export DEPSDIR	:=	$(CURDIR)/$(BUILD)
 
 export VPATH	:=	$(foreach dir,$(SOURCES),$(CURDIR)/$(dir))
  
-CFILES		:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.c)))
-CPPFILES	:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.cpp)))
-SFILES		:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.s)))
+CFILES			:=	$(foreach dir,$(SOURCES),$(shell find -L $(dir) -type f -name '*.c'))
+CFILES_COMP		:=  $(subst /,_, $(subst ..,_,$(CFILES)))
+CPPFILES		:=	$(foreach dir,$(SOURCES),$(shell find -L $(dir) -type f -name '*.cpp'))
+CPPFILES_COMP	:=  $(subst /,_, $(subst ..,_,$(CPPFILES)))
+SFILES			:=	$(foreach dir,$(SOURCES),$(shell find -L $(dir) -type f -name '*.s'))
 BINFILES	:=	$(foreach dir,$(DATA),$(notdir $(wildcard $(dir)/*.*)))
  
 export OFILES	:=	$(addsuffix .o,$(BINFILES)) \
-			$(CPPFILES:.cpp=.o) $(CFILES:.c=.o) $(SFILES:.s=.o)
+					$(CPPFILES_COMP:.cpp=.cpp.o) $(CFILES_COMP:.c=.c.o) $(SFILES_COMP:.s=.s.o)
  
 export INCLUDE	:=	$(foreach dir,$(INCLUDES),-I$(CURDIR)/$(dir)) \
 			$(foreach dir,$(LIBDIRS),-I$(dir)/include) \
@@ -79,8 +81,8 @@ clean:
  
  
 else
- 
-DEPENDS	:=	$(OFILES:.o=.d)
+
+all: $(ARM7ELF)
  
 # main targets
 $(ARM7ELF)	:	$(OFILES)
@@ -92,6 +94,18 @@ $(ARM7ELF)	:	$(OFILES)
 %.bin.o	:	%.bin
 	@echo $(notdir $<)
 	@$(bin2o)
+
+%.c.o: $(CFILES)
+	@echo "$(notdir $<) -> $(notdir $@)"
+	$(CC) -MMD -MP -MF $(DEPSDIR)/$*.d $(CFLAGS) -c ../$(subst .c.o,.c,$(subst _,/,$(subst __,../,$@))) -o $@ $(ERROR_FILTER)
+
+%.cpp.o: $(CPPFILES)
+	@echo "$(notdir $<) -> $(notdir $@)"
+	$(CXX) -MMD -MP -MF $(DEPSDIR)/$*.d $(CXXFLAGS) -c ../$(subst .cpp.o,.cpp,$(subst _,/,$(subst __,../,$@))) -o $@ $(ERROR_FILTER)
+
+%.s.o: $(SFILES)
+	@echo "$(notdir $<) -> $(notdir $@)"
+	$(CC) -MMD -MP -MF $(DEPSDIR)/$*.d -x assembler-with-cpp $(ASFLAGS) -c ../$(subst .s.o,.s,$(subst _,/,$(subst __,../,$@))) -o $@ $(ERROR_FILTER)
 
 -include $(DEPENDS)
  

@@ -115,7 +115,7 @@ Message *Socket::sendAndWaitForResponse(Message *message, bool delet) {
     }
 
     if (DEBUG_PACKETS) {
-        char *text = format("Response length: %d\nResponse ID: %d", length, id & 0xFF);
+        auto text = fmt("Response length: %d\nResponse ID: %d", length, id & 0xFF);
         Gui::drawText(SCREEN_WIDTH >> 1, 35, ARGB16(1, 0, 31, 0), TOP, text);
         delete text;
     }
@@ -131,7 +131,7 @@ Message *Socket::sendAndWaitForResponse(Message *message, bool delet) {
     response->len = length;
 
     if (DEBUG_PACKETS) {
-        char *text = format("Response ID: %d\nResponse length: %d\nResponse data: %s", response->id & 0xFF, response->len, response->hasContent() ? response->data : "null");
+        auto text = fmt("Response ID: %d\nResponse length: %d\nResponse data: %s", response->id & 0xFF, response->len, response->hasContent() ? response->data : "null");
         Gui::drawText(5, 5, ARGB16(1, 0, 31, 0), BOTTOM, text);
         delete text;
     }

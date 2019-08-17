@@ -125,44 +125,41 @@ void Gui::error(char* msg)   {
     Gui::MENU_STACK.push_back(gui);
 }
 
-void Console::print(int x, int y, char *text) {
+void Console::print(int x, int y, const char *text) {
     Gui::drawText(x, y, ARGB16(1, 31, 31, 31), this->screen, text);
 }
 
-void Console::dprint(int x, int y, char *text) {
+void Console::dprint(int x, int y, const char *text) {
     this->print(x, y, text);
     delete text;
 }
 
-void Console::printf(int x, int y, char *text, ...) {
-    va_list v1;
-    va_start(v1, text);
-    size_t size = vsnprintf(nullptr, 0, text, v1) + 1;
-    char *result = new char[size];
-    vsnprintf(result, size, text, v1);
+void Console::printf(int x, int y, const char *text, ...) {
+    va_list args;
+    va_start(args, text);
+    char *result = new char[snprintf(nullptr, 0, text, args) + 1];
+    sprintf(result, text, args);
     this->dprint(x, y, result);
 }
 
-void Console::dprintf(int x, int y, char *text, ...) {
-    va_list v1;
-    va_start(v1, text);
-    size_t size = vsnprintf(nullptr, 0, text, v1) + 1;
-    char *result = new char[size];
-    vsnprintf(result, size, text, v1);
+void Console::dprintf(int x, int y, const char *text, ...) {
+    va_list args;
+    va_start(args, text);
+    char *result = new char[snprintf(nullptr, 0, text, args) + 1];
+    sprintf(result, text, args);
     this->dprint(x, y, result);
     delete text;
 }
 
-void Console::print(char *text) {
+void Console::print(const char *text) {
     this->print(5, (this->row++) * 10 + 5, text);
 }
 
-void Console::printf(char *text, ...) {
-    va_list v1;
-    va_start(v1, text);
-    size_t size = vsnprintf(nullptr, 0, text, v1) + 1;
-    char *result = new char[size];
-    vsnprintf(result, size, text, v1);
+void Console::printf(const char *text, ...) {
+    va_list args;
+    va_start(args, text);
+    char *result = new char[snprintf(nullptr, 0, text, args) + 1];
+    sprintf(result, text, args);
     this->print(5, (this->row++) * 10 + 5, result);
     delete result;
 }

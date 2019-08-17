@@ -41,7 +41,7 @@ LIBDIRS	:=	$(LIBNDS)
 # rules for different file extensions
 ifneq ($(BUILD),$(notdir $(CURDIR)))
 
-export ARM9ELF	:=	$(CURDIR)/$(TARGET).elf
+export ARM9ELF	:=	$(CURDIR)/arm9.elf
 export DEPSDIR := $(CURDIR)/$(BUILD)
 
 export VPATH	:=	$(foreach dir,$(SOURCES),$(CURDIR)/$(dir)) \
@@ -83,6 +83,8 @@ clean:
 
 
 else
+
+all: $(ARM9ELF)
 
 # main targets
 $(ARM9ELF)	:	$(OFILES)

@@ -40,14 +40,14 @@ public:
     Message(unsigned char id, const char* data)  {
         this->id = id;
         this->data = (char*) data;
-        this->len = strlen(data);
+        this->len = lengthOf(data);
         this->isConst = true;
     }
 
     Message(unsigned char id, char* data)  {
         this->id = id;
         this->data = data;
-        this->len = strlen(data);
+        this->len = lengthOf(data);
         this->isConst = false;
     }
 
