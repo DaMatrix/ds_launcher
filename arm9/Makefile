@@ -28,7 +28,7 @@ CXXFLAGS	:= $(CFLAGS) -fno-rtti
 
 ASFLAGS	:=	-g $(ARCH) -march=armv5te -mtune=arm946e-s
 
-LDFLAGS	=	-specs=ds_arm9.specs -g $(ARCH) -Wl,-Map,$(notdir $*.map)
+LDFLAGS	=	-specs=dsi_arm9.specs -g $(ARCH) -Wl,-Map,$(notdir $*.map)
 
 # any extra libraries we wish to link with the project
 LIBS	:=	-ldswifi9 -lfat -lnds9

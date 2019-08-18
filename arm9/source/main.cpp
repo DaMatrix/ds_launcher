@@ -30,6 +30,7 @@ typedef struct {
 
 int main() {
     Font::init();
+    irqSet(IRQ_VBLANK, vblank);
 
     Gui::HANDLERS.push_back([](int keys, touchPosition *touch) -> void {
         if (keys & KEY_START) {
@@ -39,14 +40,15 @@ int main() {
         }
     });
 
+    Console::TOP->print("Waiting...");
+    while (Gui::CURRENT_FRAME < 200) swiWaitForVBlank();
+
     try {
         Console::TOP->print("Connecting to server...");
         Socket::INSTANCE.open("192.168.1.108", 8234);
         Console::TOP->print("Connected!");
 
         Gui::MENU_STACK.push_back(gui_loading);
-
-        irqSet(IRQ_VBLANK, vblank);
 
         int counter = 0;
         while (true) {

@@ -162,7 +162,11 @@ Message *Socket::sendWithoutWaiting(Message *message) {
 
 void ensureWifiStarted() {
     if (!wifiStarted || !isWifiConnected()) {
+        Console::TOP->print("Stopping wifi...");
+        Wifi_DisableWifi();
+        Console::TOP->print("Connecting to wifi...");
         if (Wifi_InitDefault(WFC_CONNECT)) {
+            Console::TOP->print("Connected.");
             wifiStarted = true;
         } else {
             throw "Couldn't connect to WiFi!";
